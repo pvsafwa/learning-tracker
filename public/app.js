@@ -221,8 +221,8 @@ async function init() {
 
 // ── IndexedDB ─────────────────────────────────────────────────────────────────
 const DB_NAME = 'learning-tracker';
-const DB_VERSION = 3;
-const STORES = ['progress', 'durations', 'activity', 'goals', 'achievements', 'handles', 'meta', 'notes', 'cards'];
+const DB_VERSION = 4;
+const STORES = ['progress', 'durations', 'activity', 'goals', 'achievements', 'handles', 'meta', 'notes', 'cards', 'quizzes'];
 let _dbPromise = null;
 
 function openDB() {
@@ -304,7 +304,9 @@ const db = {
   async getAllNotes() { const e = await idbEntries('notes'); const m = {}; for (const { key, value } of e) m[key] = value; return m; },
   async getAllCards() { const e = await idbEntries('cards'); return e.map(({ value }) => value); },
   saveCard(card) { return idbPut('cards', card.id, card); },
-  deleteCard(id) { return idbDelete('cards', id); }
+  deleteCard(id) { return idbDelete('cards', id); },
+  getQuiz(videoId) { return idbGet('quizzes', videoId); },
+  saveQuiz(videoId, questions) { return idbPut('quizzes', videoId, { questions, generatedAt: new Date().toISOString() }); }
 };
 
 async function getStats() {
@@ -2320,9 +2322,14 @@ const DEMO_QUIZ = [
   { question: 'What characterises a declarative approach?', options: ['You write step-by-step instructions', 'You describe the desired state and let the tool reconcile it', 'You must use a graphical interface', 'It cannot be automated'], answer: 1, explanation: 'Declarative = describe the end state; the tool figures out how to reach it.' }
 ];
 
-async function generateQuiz(video, n = 5) {
+async function generateQuiz(video, n = 5, force = false) {
   // The demo library always uses a built-in quiz so it works offline / without a key.
   if (state.rootName === 'Demo Library') return DEMO_QUIZ.slice(0, n);
+  // Reuse a previously generated quiz for this lesson — avoids re-spending quota.
+  if (!force) {
+    const cached = await db.getQuiz(video.id).catch(() => null);
+    if (cached?.questions?.length) return cached.questions;
+  }
   if (!aiConfig().key) throw new Error('no-key');
   let source = (state.transcript || []).map((c) => c.text).join(' ').trim();
   if (!source && state.notes.length) source = state.notes.map((nn) => nn.text).filter(Boolean).join('. ');
@@ -2332,6 +2339,7 @@ async function generateQuiz(video, n = 5) {
   const text = await callAI(prompt);
   const qs = parseQuizJson(text);
   if (!qs.length) throw new Error('parse');
+  db.saveQuiz(video.id, qs).catch(() => {});
   return qs;
 }
 
@@ -2341,22 +2349,23 @@ function quizAvailableFor(v) {
   if (state.rootName === 'Demo Library') return true;
   return Boolean(v.hasTranscript) && Boolean(aiConfig().key);
 }
-async function startQuiz(auto = false) {
+async function startQuiz(auto = false, force = false) {
   const v = state.selectedVideo;
   if (!v || v.kind === 'pdf') return;
   el.quizModal.hidden = false;
   el.quizProgress.textContent = 'Quiz';
-  el.quizBody.innerHTML = '<div class="quiz-loading"><div class="gate-spinner"></div><p>Generating your quiz…</p></div>';
+  el.quizBody.innerHTML = `<div class="quiz-loading"><div class="gate-spinner"></div><p>${force ? 'Generating a new quiz…' : 'Preparing your quiz…'}</p></div>`;
   try {
-    const questions = await generateQuiz(v, 5);
+    const questions = await generateQuiz(v, 5, force);
     state.quiz = { video: v, questions, index: 0, answers: [], correct: 0, auto };
     renderQuizQuestion();
   } catch (e) {
     if (auto) {
-      // Don't interrupt an auto-trigger with an error modal — close quietly.
+      // Don't interrupt an auto-trigger with an error modal — close and continue.
       el.quizModal.hidden = true;
       state.quiz = null;
-      if (e.message !== 'no-source') toast(`Quiz unavailable · ${e.message.slice(0, 60)}`, 'warn', 4000);
+      if (e.message !== 'no-source') toast(`Quiz unavailable · ${e.message.slice(0, 70)}`, 'warn', 4500);
+      window.setTimeout(() => playAdjacent(1, true), 250);
       return;
     }
     renderQuizError(e.message);
@@ -2375,7 +2384,16 @@ function renderQuizError(code) {
     document.querySelector('#quizOpenSettings2')?.addEventListener('click', () => { endQuiz(); openSettings(); });
   } else {
     const net = /network or cors/i.test(code);
-    el.quizBody.innerHTML = `<div class="quiz-msg"><h3>Couldn't generate a quiz</h3><p>${escapeHtml(code)}</p><p class="quiz-hint">${net ? 'The request couldn’t reach the provider — check your connection. Some providers block direct browser calls.' : 'Check your provider, API key and model name in Settings, then retry.'}</p><div class="quiz-result-actions" style="justify-content:center"><button class="pill-button" id="quizOpenSettings2">Open settings</button><button class="primary-button" id="quizRetry">Retry</button></div></div>`;
+    const quota = /\b429\b|quota|rate limit|resource_exhausted/i.test(code);
+    let title = "Couldn't generate a quiz";
+    let hint = 'Check your provider, API key and model name in Settings, then retry.';
+    if (quota) {
+      title = 'AI rate limit reached';
+      hint = 'Your key works — you’ve just hit the provider’s rate or daily limit. Wait a minute and retry. (Generated quizzes are cached per lesson, so you won’t re-spend on this one.) For higher free limits, try the model <b>gemini-2.0-flash-lite</b> in Settings.';
+    } else if (net) {
+      hint = 'The request couldn’t reach the provider — check your connection. Some providers block direct browser calls.';
+    }
+    el.quizBody.innerHTML = `<div class="quiz-msg"><h3>${title}</h3><p>${escapeHtml(code)}</p><p class="quiz-hint">${hint}</p><div class="quiz-result-actions" style="justify-content:center"><button class="pill-button" id="quizOpenSettings2">Open settings</button><button class="primary-button" id="quizRetry">Retry</button></div></div>`;
     document.querySelector('#quizRetry')?.addEventListener('click', () => startQuiz());
     document.querySelector('#quizOpenSettings2')?.addEventListener('click', () => { endQuiz(); openSettings(); });
   }
@@ -2424,12 +2442,14 @@ function showQuizResults() {
       <div class="quiz-score ${pct >= 70 ? 'good' : pct >= 40 ? 'mid' : 'low'}">${q.correct} / ${q.questions.length}</div>
       <p>${pct >= 70 ? 'Great recall! 🎉' : pct >= 40 ? 'Good effort — revisit the ones you missed.' : 'Worth another pass through this lesson.'}</p>
       <div class="quiz-result-actions">
+        <button class="pill-button" id="quizRegen"><span class="icon icon-rotate-cw"></span> New quiz</button>
         <button class="pill-button" id="quizSaveCards"><span class="icon icon-layers"></span> Save as flashcards</button>
         <button class="primary-button" id="quizDone">Done</button>
       </div>
     </div>`;
   document.querySelector('#quizDone').addEventListener('click', endQuiz);
   document.querySelector('#quizSaveCards').addEventListener('click', saveQuizAsCards);
+  document.querySelector('#quizRegen').addEventListener('click', () => startQuiz(false, true));
 }
 function saveQuizAsCards() {
   const q = state.quiz;
@@ -2490,7 +2510,7 @@ function saveSettings() {
 }
 
 // ── Backup & restore ──────────────────────────────────────────────────────────
-const BACKUP_STORES = ['progress', 'durations', 'activity', 'goals', 'achievements', 'notes', 'cards'];
+const BACKUP_STORES = ['progress', 'durations', 'activity', 'goals', 'achievements', 'notes', 'cards', 'quizzes'];
 async function exportData() {
   const data = {};
   for (const s of BACKUP_STORES) {
