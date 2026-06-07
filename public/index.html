@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learning Tracker</title>
+    <script>try { var t = localStorage.getItem('lt:theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=8" />
+  </head>
+  <body>
+    <div id="app">
+      <aside class="sidebar">
+        <div class="sidebar-inner">
+          <header class="brand">
+            <div class="mark" aria-hidden="true">LT</div>
+            <div class="brand-copy">
+              <h1>Learning Tracker</h1>
+              <p id="sourceRoot">Loading source…</p>
+            </div>
+            <div class="brand-actions">
+              <button class="ghost-button" id="homeButton" type="button" title="Dashboard" aria-label="Dashboard">
+                <span class="icon icon-dashboard" aria-hidden="true"></span>
+              </button>
+              <button class="ghost-button" id="sourceButton" type="button" title="Change courses folder" aria-label="Change courses folder">
+                <span class="icon icon-folder" aria-hidden="true"></span>
+              </button>
+              <button class="ghost-button" id="themeToggle" type="button" title="Switch to light mode" aria-label="Switch to light mode">
+                <span class="icon icon-moon" aria-hidden="true"></span>
+              </button>
+              <button class="ghost-button" id="sidebarToggle" type="button" title="Hide sidebar" aria-label="Hide sidebar">
+                <span class="icon icon-panel-left" aria-hidden="true"></span>
+              </button>
+            </div>
+          </header>
+
+          <section class="hero">
+            <div class="hero-ring">
+              <svg viewBox="0 0 120 120" class="progress-ring" aria-hidden="true">
+                <defs>
+                  <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%"  stop-color="#ff8a3d" />
+                    <stop offset="55%" stop-color="#ff4d8d" />
+                    <stop offset="100%" stop-color="#a855f7" />
+                  </linearGradient>
+                </defs>
+                <circle class="ring-bg" cx="60" cy="60" r="52" />
+                <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52" />
+              </svg>
+              <div class="hero-center">
+                <strong id="heroPercent">0%</strong>
+                <span>complete</span>
+              </div>
+            </div>
+            <div class="hero-stats">
+              <div class="hero-stat">
+                <span class="hero-dot dot-videos"></span>
+                <strong id="statCourses">0</strong>
+                <span>Courses</span>
+              </div>
+              <div class="hero-stat">
+                <span class="hero-dot dot-progress"></span>
+                <strong id="statProgress">0</strong>
+                <span>In Progress</span>
+              </div>
+              <div class="hero-stat">
+                <span class="hero-dot dot-done"></span>
+                <strong id="statDone">0</strong>
+                <span>Completed</span>
+              </div>
+            </div>
+          </section>
+
+          <div class="toolbar">
+            <div class="search-wrap">
+              <span class="search-icon" aria-hidden="true"><span class="icon icon-search"></span></span>
+              <input id="searchInput" type="search" placeholder="Search courses or videos…" autocomplete="off" />
+            </div>
+            <button class="icon-button" id="refreshButton" type="button" title="Rescan source folder" aria-label="Rescan source folder">
+              <span class="icon icon-refresh" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <div class="filter-chips" id="filterChips" role="group" aria-label="Filter lessons">
+            <button class="chip active" type="button" data-filter="all">All</button>
+            <button class="chip" type="button" data-filter="progress">In progress</button>
+            <button class="chip" type="button" data-filter="done">Completed</button>
+            <button class="chip" type="button" data-filter="new">Not started</button>
+          </div>
+
+          <nav class="course-list" id="courseList" aria-label="Courses">
+            <div class="skeleton-list">
+              <div class="skeleton-item"></div>
+              <div class="skeleton-item"></div>
+              <div class="skeleton-item"></div>
+            </div>
+          </nav>
+
+          <div class="sidebar-foot">
+            <button class="text-button" id="resetAll" type="button">
+              <span class="icon icon-rotate-ccw" aria-hidden="true"></span>
+              Reset all progress
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="player-workspace dashboard-view">
+        <div class="resize-handle" id="resizeHandle" title="Drag to resize" role="separator" aria-orientation="vertical" aria-label="Resize sidebar">
+          <span class="resize-grip" aria-hidden="true"></span>
+        </div>
+
+        <button class="sidebar-show" id="sidebarShow" type="button" title="Show sidebar" aria-label="Show sidebar">
+          <span class="icon icon-panel-left" aria-hidden="true"></span>
+        </button>
+
+        <section class="player-stage" id="playerStage" aria-label="Video player">
+          <div class="player-meta">
+            <div class="player-meta-copy">
+              <p id="breadcrumb">Select a lesson</p>
+              <h2 id="videoTitle">Ready to learn</h2>
+            </div>
+            <div class="meta-actions">
+              <div class="video-stats" id="videoStats"></div>
+              <button class="meta-reset" id="cardsToggle" type="button" title="Flashcards" aria-label="Flashcards">
+                <span class="icon icon-layers" aria-hidden="true"></span>
+                <span class="meta-badge" id="cardsBadge" hidden>0</span>
+              </button>
+              <button class="meta-reset" id="transcriptToggle" type="button" title="Transcript" aria-label="Transcript">
+                <span class="icon icon-text-search" aria-hidden="true"></span>
+              </button>
+              <button class="meta-reset" id="notesToggle" type="button" title="Notes & bookmarks (notes panel)" aria-label="Notes and bookmarks">
+                <span class="icon icon-notebook" aria-hidden="true"></span>
+                <span class="meta-badge" id="notesBadge" hidden>0</span>
+              </button>
+              <button class="meta-reset" id="resetLesson" type="button" hidden title="Reset progress for this lesson" aria-label="Reset progress for this lesson">
+                <span class="icon icon-rotate-ccw" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="video-frame" id="videoFrame">
+            <video id="player" preload="metadata" playsinline></video>
+
+            <div class="audio-stage" id="audioStage" aria-hidden="true">
+              <div class="audio-art"><span class="icon icon-music"></span></div>
+              <div class="audio-bars" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <div class="audio-title" id="audioTitle"></div>
+              <div class="audio-sub">Audio lesson</div>
+            </div>
+
+            <div class="pdf-stage" id="pdfStage" aria-hidden="true">
+              <iframe id="pdfFrame" title="PDF document" referrerpolicy="no-referrer"></iframe>
+              <div class="pdf-toolbar">
+                <span class="pdf-label"><span class="icon icon-file-text" aria-hidden="true"></span> PDF document</span>
+                <div class="pdf-actions">
+                  <a id="pdfOpen" class="pdf-tool-btn" target="_blank" rel="noopener">Open in new tab</a>
+                  <button id="pdfComplete" class="pdf-tool-btn primary" type="button">Mark as complete</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="player-empty" id="playerEmpty">
+              <div class="empty-icon" aria-hidden="true">
+                <span class="icon icon-sparkles"></span>
+              </div>
+              <strong>Ready when you are</strong>
+              <span>Pick a lesson from the sidebar to start learning</span>
+            </div>
+
+            <div class="controls-overlay" id="controlsOverlay" role="group" aria-label="Video controls">
+              <div class="seek-bar-wrap">
+                <div class="seek-track" id="seekTrack">
+                  <div class="seek-buffer" id="seekBuffer"></div>
+                  <div class="seek-fill" id="seekFill"></div>
+                  <input id="seekSlider" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek video" />
+                  <div class="seek-tooltip" id="seekTooltip" aria-hidden="true">0:00</div>
+                </div>
+                <div class="time-row">
+                  <span id="currentTime">0:00</span>
+                  <span id="durationTime">0:00</span>
+                </div>
+              </div>
+
+              <div class="control-row">
+                <div class="control-group">
+                  <button class="control-button" id="prevButton" type="button" title="Previous lesson (P)" aria-label="Previous lesson">
+                    <span class="icon icon-skip-back" aria-hidden="true"></span>
+                  </button>
+                  <button class="control-button" id="skipBackButton" type="button" title="Back 10 seconds (←)" aria-label="Skip back 10 seconds">
+                    <span class="icon icon-rewind" aria-hidden="true"></span>
+                  </button>
+                  <button class="play-button" id="playToggle" type="button" title="Play or pause (Space)" aria-label="Play or pause">
+                    <span class="icon icon-play" aria-hidden="true"></span>
+                  </button>
+                  <button class="control-button" id="skipForwardButton" type="button" title="Forward 10 seconds (→)" aria-label="Skip forward 10 seconds">
+                    <span class="icon icon-fast-forward" aria-hidden="true"></span>
+                  </button>
+                  <button class="control-button" id="nextButton" type="button" title="Next lesson (N)" aria-label="Next lesson">
+                    <span class="icon icon-skip-forward" aria-hidden="true"></span>
+                  </button>
+                </div>
+
+                <div class="control-group control-group-right">
+                  <div class="volume-group">
+                    <button class="control-button" id="muteToggle" type="button" title="Mute (M)" aria-label="Mute">
+                      <span class="icon icon-volume-2" aria-hidden="true"></span>
+                    </button>
+                    <input id="volumeSlider" class="volume-slider" type="range" min="0" max="1" value="1" step="0.01" aria-label="Volume" />
+                  </div>
+                  <select id="speedSelect" aria-label="Playback speed" title="Playback speed">
+                    <option value="0.5">0.5×</option>
+                    <option value="0.75">0.75×</option>
+                    <option value="1" selected>1×</option>
+                    <option value="1.25">1.25×</option>
+                    <option value="1.5">1.5×</option>
+                    <option value="1.75">1.75×</option>
+                    <option value="2">2×</option>
+                  </select>
+                  <button class="control-button" id="ccButton" type="button" title="Captions (C)" aria-label="Toggle captions" hidden>
+                    <span class="icon icon-captions" aria-hidden="true"></span>
+                  </button>
+                  <button class="control-button" id="pipButton" type="button" title="Picture-in-Picture" aria-label="Picture-in-Picture">
+                    <span class="icon icon-pip" aria-hidden="true"></span>
+                  </button>
+                  <button class="control-button" id="shortcutsButton" type="button" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+                    <span class="icon icon-keyboard" aria-hidden="true"></span>
+                  </button>
+                  <button class="control-button" id="fullscreenButton" type="button" title="Fullscreen (F)" aria-label="Fullscreen">
+                    <span class="icon icon-maximize" aria-hidden="true"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="notes-drawer" id="notesDrawer" aria-label="Notes and bookmarks" hidden>
+          <div class="notes-head">
+            <h3><span class="icon icon-notebook" aria-hidden="true"></span> Notes &amp; bookmarks</h3>
+            <div class="notes-head-actions">
+              <button class="ghost-button" id="notesExport" type="button" title="Export notes (markdown)" aria-label="Export notes">
+                <span class="icon icon-download"></span>
+              </button>
+              <button class="ghost-button" id="notesClose" type="button" title="Close" aria-label="Close notes">
+                <span class="icon icon-x"></span>
+              </button>
+            </div>
+          </div>
+          <div class="notes-compose">
+            <textarea id="noteInput" rows="2" placeholder="Add a note at the current time…"></textarea>
+            <div class="notes-compose-row">
+              <span class="note-at" id="noteAt">at 0:00</span>
+              <div class="notes-compose-btns">
+                <button class="pill-button" id="noteBookmark" type="button" title="Bookmark this moment (B)"><span class="icon icon-bookmark"></span> Bookmark</button>
+                <button class="primary-button" id="noteAdd" type="button">Add note</button>
+              </div>
+            </div>
+          </div>
+          <div class="notes-list" id="notesList"></div>
+        </aside>
+
+        <aside class="notes-drawer transcript-drawer" id="transcriptDrawer" aria-label="Transcript" hidden>
+          <div class="notes-head">
+            <h3><span class="icon icon-text-search" aria-hidden="true"></span> Transcript</h3>
+            <div class="notes-head-actions">
+              <button class="ghost-button" id="transcriptClose" type="button" title="Close" aria-label="Close transcript">
+                <span class="icon icon-x"></span>
+              </button>
+            </div>
+          </div>
+          <div class="transcript-search">
+            <span class="search-icon" aria-hidden="true"><span class="icon icon-search"></span></span>
+            <input id="transcriptSearch" type="search" placeholder="Search transcript…" autocomplete="off" />
+          </div>
+          <div class="transcript-list" id="transcriptList"></div>
+        </aside>
+
+        <aside class="notes-drawer cards-drawer" id="cardsDrawer" aria-label="Flashcards" hidden>
+          <div class="notes-head">
+            <h3><span class="icon icon-layers" aria-hidden="true"></span> Flashcards</h3>
+            <div class="notes-head-actions">
+              <button class="pill-button" id="cardsReviewLesson" type="button" hidden><span class="icon icon-brain"></span> Review</button>
+              <button class="ghost-button" id="cardsClose" type="button" title="Close" aria-label="Close flashcards">
+                <span class="icon icon-x"></span>
+              </button>
+            </div>
+          </div>
+          <div class="cards-compose">
+            <input id="cardFront" type="text" placeholder="Question / prompt" autocomplete="off" />
+            <textarea id="cardBack" rows="2" placeholder="Answer"></textarea>
+            <div class="notes-compose-row">
+              <label class="card-link"><input type="checkbox" id="cardLinkTime" checked /> link to <span id="cardAt">0:00</span></label>
+              <button class="primary-button" id="cardAdd" type="button">Add card</button>
+            </div>
+          </div>
+          <div class="notes-list" id="cardsList"></div>
+        </aside>
+
+        <section class="dashboard" id="dashboard" aria-label="Dashboard">
+          <div class="dash-scroll">
+            <header class="dash-head">
+              <div>
+                <p class="dash-greeting" id="dashGreeting">Welcome back</p>
+                <h2 class="dash-title">Your learning dashboard</h2>
+              </div>
+            </header>
+
+            <div class="stat-tiles" id="statTiles"></div>
+
+            <section class="dash-section" id="continueSection" hidden>
+              <div class="dash-section-head"><h3><span class="icon icon-history" aria-hidden="true"></span> Continue watching</h3></div>
+              <div class="continue-row" id="continueRow"></div>
+            </section>
+
+            <section class="dash-section" id="flashSection" hidden>
+              <div class="dash-section-head">
+                <h3><span class="icon icon-layers" aria-hidden="true"></span> Flashcards</h3>
+                <span class="dash-sub" id="flashSub"></span>
+              </div>
+              <div class="flash-cta" id="flashCta"></div>
+            </section>
+
+            <section class="dash-section">
+              <div class="dash-section-head">
+                <h3><span class="icon icon-target" aria-hidden="true"></span> Goals</h3>
+                <button class="pill-button" id="addGoalBtn" type="button"><span class="icon icon-plus" aria-hidden="true"></span> New goal</button>
+              </div>
+              <div class="goals-list" id="goalsList"></div>
+            </section>
+
+            <section class="dash-section">
+              <div class="dash-section-head">
+                <h3><span class="icon icon-calendar" aria-hidden="true"></span> Activity</h3>
+                <span class="dash-sub" id="activitySub"></span>
+              </div>
+              <div class="heatmap-wrap"><div class="heatmap" id="heatmap"></div></div>
+            </section>
+
+            <section class="dash-section">
+              <div class="dash-section-head"><h3><span class="icon icon-award" aria-hidden="true"></span> Achievements</h3></div>
+              <div class="badges" id="badges"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Flashcard review -->
+    <div class="modal-backdrop" id="reviewModal" role="dialog" aria-modal="true" aria-label="Flashcard review" hidden>
+      <div class="review-card">
+        <div class="review-top">
+          <span class="review-progress" id="reviewProgress">1 / 1</span>
+          <button class="modal-close" id="reviewClose" type="button" aria-label="Close review"><span class="icon icon-x"></span></button>
+        </div>
+        <div class="review-body">
+          <div class="review-context" id="reviewContext"></div>
+          <div class="review-front" id="reviewFront"></div>
+          <div class="review-divider" id="reviewDivider" hidden></div>
+          <div class="review-back" id="reviewBack" hidden></div>
+        </div>
+        <div class="review-actions">
+          <button class="primary-button review-show" id="reviewShow" type="button">Show answer <span class="kbd-hint">Space</span></button>
+          <div class="review-grades" id="reviewGrades" hidden>
+            <button class="grade again" data-grade="again" type="button">Again<small id="gAgain"></small></button>
+            <button class="grade hard" data-grade="hard" type="button">Hard<small id="gHard"></small></button>
+            <button class="grade good" data-grade="good" type="button">Good<small id="gGood"></small></button>
+            <button class="grade easy" data-grade="easy" type="button">Easy<small id="gEasy"></small></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Welcome / folder-access gate -->
+    <div class="gate" id="gate" hidden>
+      <div class="gate-card" id="gateCard"></div>
+    </div>
+
+    <!-- Keyboard shortcuts modal -->
+    <div class="modal-backdrop" id="shortcutsModal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" hidden>
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Keyboard Shortcuts</h3>
+          <button class="modal-close" id="shortcutsClose" type="button" aria-label="Close">
+            <span class="icon icon-x"></span>
+          </button>
+        </div>
+        <div class="shortcuts-grid">
+          <div class="shortcut-row"><kbd>Space</kbd><span>Play / Pause</span></div>
+          <div class="shortcut-row"><kbd>←</kbd><span>Seek back 10s</span></div>
+          <div class="shortcut-row"><kbd>→</kbd><span>Seek forward 10s</span></div>
+          <div class="shortcut-row"><kbd>↑</kbd><span>Volume up</span></div>
+          <div class="shortcut-row"><kbd>↓</kbd><span>Volume down</span></div>
+          <div class="shortcut-row"><kbd>M</kbd><span>Toggle mute</span></div>
+          <div class="shortcut-row"><kbd>F</kbd><span>Toggle fullscreen</span></div>
+          <div class="shortcut-row"><kbd>N</kbd><span>Next lesson</span></div>
+          <div class="shortcut-row"><kbd>P</kbd><span>Previous lesson</span></div>
+          <div class="shortcut-row"><kbd>B</kbd><span>Bookmark moment</span></div>
+          <div class="shortcut-row"><kbd>C</kbd><span>Toggle captions</span></div>
+          <div class="shortcut-row"><kbd>[</kbd><span>Toggle sidebar</span></div>
+          <div class="shortcut-row"><kbd>?</kbd><span>Show shortcuts</span></div>
+          <div class="shortcut-row"><kbd>Esc</kbd><span>Close modal</span></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Goal editor -->
+    <div class="modal-backdrop" id="goalModal" role="dialog" aria-modal="true" aria-label="Set a goal" hidden>
+      <div class="modal modal-wide">
+        <div class="modal-header">
+          <h3>Set a goal</h3>
+          <button class="modal-close" id="goalClose" type="button" aria-label="Close"><span class="icon icon-x"></span></button>
+        </div>
+        <div class="goal-form">
+          <label class="field-label" for="goalTitle">Goal name <span class="field-opt">(optional)</span></label>
+          <input id="goalTitle" type="text" autocomplete="off" placeholder="e.g. Finish DevOps fundamentals" />
+
+          <label class="field-label">Courses to include</label>
+          <div class="course-picker" id="goalCourses"></div>
+
+          <div class="goal-row">
+            <div>
+              <label class="field-label" for="goalDate">Target date</label>
+              <input id="goalDate" type="date" />
+            </div>
+            <div>
+              <label class="field-label" for="goalMinutes">Daily target <span class="field-opt">(minutes, optional)</span></label>
+              <input id="goalMinutes" type="number" min="0" step="5" placeholder="e.g. 30" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <span class="source-current" id="goalHint">Pick at least one course.</span>
+          <button class="primary-button" id="goalSave" type="button">Create goal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm dialog -->
+    <div class="modal-backdrop" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" hidden>
+      <div class="modal modal-confirm">
+        <div class="modal-header">
+          <h3 id="confirmTitle">Are you sure?</h3>
+        </div>
+        <div class="confirm-body" id="confirmBody"></div>
+        <div class="confirm-actions">
+          <button class="ghost-pill" id="confirmCancel" type="button">Cancel</button>
+          <button class="danger-button" id="confirmOk" type="button">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="false"></div>
+
+    <script type="module" src="/app.js?v=8"></script>
+  </body>
+</html>

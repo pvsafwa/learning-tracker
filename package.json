@@ -1,0 +1,17 @@
+{
+  "name": "learning-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local browser app for tracking course video progress from a source folder.",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "lucide-static": "^1.17.0"
+  }
+}
