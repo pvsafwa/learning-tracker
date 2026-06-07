@@ -34,13 +34,25 @@ Supported media: video (`.mp4`, `.mkv`, `.mov`, `.webm`, …), audio (`.mp3`, `.
 
 ## Features
 
-- Resume videos/audio from where you left off.
-- A **dashboard** with time invested (today / week / lifetime), a study **streak**, an activity **heatmap**, **continue watching**, **goals** with deadlines & pace projection, and **achievements**.
-- Search, filter (in progress / completed / not started), light & dark themes, keyboard shortcuts, Picture-in-Picture, and and per-lesson / per-course / all progress reset.
+- Resume videos/audio from where you left off; durations are read automatically in the background.
+- A **dashboard** with time invested (today / week / lifetime), a study **streak**, an activity **heatmap**, **continue watching**, **goals** with deadlines & pace projection, **flashcards due**, and **achievements**.
+- **Active-learning tools:**
+  - **Timestamped notes & bookmarks** — capture at the current moment, click to jump back, export to Markdown.
+  - **Captions & transcript** — drop a `.srt`/`.vtt` next to a video; get on-screen captions plus a searchable, click-to-seek transcript.
+  - **Flashcards + spaced repetition** — make Q&A cards (SM-2 scheduling) and review what's due, right on the dashboard.
+  - **AI quizzes** — generate an end-of-lesson multiple-choice quiz from the transcript using your own API key (Google **Gemini** has a free tier; OpenAI and Anthropic also supported). Set it up in **Settings**; quiz questions can be saved as flashcards.
+- **Backup & restore** — export all your data to a JSON file and import it on another device (Settings → Backup & restore).
+- Search, filter (in progress / completed / not started), light & dark themes, keyboard shortcuts, Picture-in-Picture, and per-lesson / per-course / all progress reset.
+- A built-in **demo library** ("explore a demo" on the welcome screen) to try the app without picking a folder.
+
+## Keyboard shortcuts
+
+`Space` play/pause · `←/→` seek 10s · `↑/↓` volume · `M` mute · `C` captions · `B` bookmark · `F` fullscreen · `N`/`P` next/previous · `[` toggle sidebar · `?` shortcuts. In a quiz/review: `Space` to reveal, `1–4` to grade.
 
 ## Data & privacy
 
 Everything stays on your device:
 
 - Your media files are read locally and never uploaded.
-- Progress, durations, activity, goals, and achievements live in your browser's IndexedDB (per browser/device). Clearing site data removes them; there's no account or sync.
+- Progress, durations, activity, notes, flashcards, goals, and achievements live in your browser's IndexedDB (per browser/device); preferences and your AI key live in localStorage. There's no account or sync — use **Backup & restore** to move between devices.
+- AI quizzes send the lesson transcript directly from your browser to your chosen AI provider, using your own key. The key is never included in exported backups.

@@ -177,7 +177,27 @@ const el = {
   // Dashboard flashcards
   flashSection:     document.querySelector('#flashSection'),
   flashSub:         document.querySelector('#flashSub'),
-  flashCta:         document.querySelector('#flashCta')
+  flashCta:         document.querySelector('#flashCta'),
+  // Settings
+  settingsButton:   document.querySelector('#settingsButton'),
+  settingsModal:    document.querySelector('#settingsModal'),
+  settingsClose:    document.querySelector('#settingsClose'),
+  aiProvider:       document.querySelector('#aiProvider'),
+  aiKey:            document.querySelector('#aiKey'),
+  aiKeyShow:        document.querySelector('#aiKeyShow'),
+  aiKeyHint:        document.querySelector('#aiKeyHint'),
+  aiModel:          document.querySelector('#aiModel'),
+  autoQuizToggle:   document.querySelector('#autoQuizToggle'),
+  settingsSave:     document.querySelector('#settingsSave'),
+  exportBtn:        document.querySelector('#exportBtn'),
+  importBtn:        document.querySelector('#importBtn'),
+  importFile:      document.querySelector('#importFile'),
+  // Quiz
+  quizButton:       document.querySelector('#quizButton'),
+  quizModal:        document.querySelector('#quizModal'),
+  quizProgress:     document.querySelector('#quizProgress'),
+  quizClose:        document.querySelector('#quizClose'),
+  quizBody:         document.querySelector('#quizBody')
 };
 
 // ── Boot ────────────────────────────────────────────────────────────────────
@@ -722,7 +742,13 @@ function bindEvents() {
     saveProgress('ended', { renderList: true });
     updatePlayerControls();
     showControls();
-    window.setTimeout(() => playAdjacent(1, true), 350);
+    // When a quiz is available and auto-quiz is on, run the quiz instead of
+    // auto-advancing; otherwise advance to the next lesson as before.
+    if (quizAvailableFor(state.selectedVideo) && localStorage.getItem('lt:auto-quiz') !== '0') {
+      window.setTimeout(() => startQuiz(true), 400);
+    } else {
+      window.setTimeout(() => playAdjacent(1, true), 350);
+    }
   });
   el.player.addEventListener('seeking', () => { state.isSeeking = true; });
   el.player.addEventListener('seeked',  () => { state.isSeeking = false; saveProgress('seeked', { renderList: true }); updatePlayerControls(); });
@@ -871,6 +897,31 @@ function bindEvents() {
   });
   el.reviewModal.addEventListener('click', (e) => { if (e.target === el.reviewModal) endReview(); });
 
+  // Settings (AI)
+  el.settingsButton.addEventListener('click', openSettings);
+  el.settingsClose.addEventListener('click', () => { el.settingsModal.hidden = true; });
+  el.settingsModal.addEventListener('click', (e) => { if (e.target === el.settingsModal) el.settingsModal.hidden = true; });
+  el.aiProvider.addEventListener('change', syncSettingsProvider);
+  el.aiKeyShow.addEventListener('click', () => {
+    const showing = el.aiKey.type === 'text';
+    el.aiKey.type = showing ? 'password' : 'text';
+    el.aiKeyShow.querySelector('.icon').className = `icon icon-${showing ? 'eye' : 'eye-off'}`;
+  });
+  el.settingsSave.addEventListener('click', saveSettings);
+  el.exportBtn.addEventListener('click', exportData);
+  el.importBtn.addEventListener('click', () => el.importFile.click());
+  el.importFile.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) importData(f); e.target.value = ''; });
+
+  // Quiz
+  el.quizButton.addEventListener('click', startQuiz);
+  el.quizClose.addEventListener('click', endQuiz);
+  el.quizModal.addEventListener('click', (e) => { if (e.target === el.quizModal) endQuiz(); });
+  el.quizBody.addEventListener('click', (e) => {
+    const opt = e.target.closest('.quiz-opt');
+    if (opt && !opt.disabled) { answerQuiz(Number(opt.dataset.opt)); return; }
+    if (e.target.closest('#quizNext')) nextQuiz();
+  });
+
   // Dashboard
   el.homeButton.addEventListener('click', showDashboard);
   el.addGoalBtn.addEventListener('click', openGoalModal);
@@ -944,10 +995,13 @@ function handleKeydown(e) {
     return;
   }
 
+  if (!el.quizModal.hidden && e.key === 'Escape') { endQuiz(); return; }
+
   if (e.key === 'Escape') {
     if (!el.confirmModal.hidden) el.confirmCancel.click();
     if (!el.shortcutsModal.hidden) closeShortcuts();
     if (!el.goalModal.hidden) el.goalModal.hidden = true;
+    if (!el.settingsModal.hidden) el.settingsModal.hidden = true;
     return;
   }
   if (e.key === '?') { e.preventDefault(); openShortcuts(); return; }
@@ -1449,11 +1503,12 @@ async function deleteGoal(id) {
 }
 
 // ── Toasts ───────────────────────────────────────────────────────────────────
-function toast(message, type = 'info', duration = 3200) {
+function toast(message, type = 'info', duration = 3200, onClick = null) {
   const iconMap = { success: 'check-circle', info: 'info', warn: 'alert-circle' };
   const div = document.createElement('div');
-  div.className = `toast ${type}`;
+  div.className = `toast ${type}${onClick ? ' clickable' : ''}`;
   div.innerHTML = `<span class="icon icon-${iconMap[type] || 'info'}" aria-hidden="true"></span><span>${escapeHtml(message)}</span>`;
+  if (onClick) div.addEventListener('click', () => { onClick(); div.remove(); });
   el.toastContainer.appendChild(div);
   setTimeout(() => {
     div.classList.add('dismissing');
@@ -1890,6 +1945,7 @@ function loadTranscript(video) {
   const has = Boolean(video.hasTranscript) && video.kind !== 'pdf';
   el.transcriptToggle.hidden = !has;
   el.ccButton.hidden = !(has && video.kind === 'video');
+  el.quizButton.hidden = video.kind === 'pdf' ? true : !(has || state.rootName === 'Demo Library');
   renderTranscript();
   if (!has) { if (!el.transcriptDrawer.hidden) el.transcriptDrawer.hidden = true; return; }
 
@@ -2180,6 +2236,307 @@ function renderFlashcards() {
   if (btn && due) btn.addEventListener('click', () => startReview('all'));
 }
 
+// ── AI config & calls ─────────────────────────────────────────────────────────
+function aiConfig() {
+  return {
+    provider: localStorage.getItem('lt:ai-provider') || 'gemini',
+    key: localStorage.getItem('lt:ai-key') || '',
+    model: localStorage.getItem('lt:ai-model') || ''
+  };
+}
+function defaultModel(provider) {
+  return provider === 'openai' ? 'gpt-4o-mini' : provider === 'anthropic' ? 'claude-3-5-haiku-latest' : 'gemini-2.0-flash';
+}
+async function aiError(res) {
+  let detail = '';
+  try { const j = await res.json(); detail = j.error?.message || j.error?.type || JSON.stringify(j).slice(0, 180); }
+  catch { try { detail = (await res.text()).slice(0, 180); } catch {} }
+  return new Error(`HTTP ${res.status}${detail ? ` — ${detail}` : ''}`);
+}
+async function callAI(prompt) {
+  const { provider, key } = aiConfig();
+  const model = aiConfig().model || defaultModel(provider);
+  if (!key) throw new Error('no-key');
+  let res;
+  try {
+    if (provider === 'gemini') {
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.4 } })
+      });
+      if (!res.ok) throw await aiError(res);
+      const d = await res.json();
+      if (d.promptFeedback?.blockReason) throw new Error(`Blocked by safety filter (${d.promptFeedback.blockReason})`);
+      return (d.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
+    }
+    if (provider === 'openai') {
+      res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model, temperature: 0.4, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
+      });
+      if (!res.ok) throw await aiError(res);
+      const d = await res.json();
+      return d.choices?.[0]?.message?.content || '';
+    }
+    if (provider === 'anthropic') {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model, max_tokens: 1600, messages: [{ role: 'user', content: prompt }] })
+      });
+      if (!res.ok) throw await aiError(res);
+      const d = await res.json();
+      return (d.content || []).map((c) => c.text || '').join('');
+    }
+  } catch (e) {
+    // fetch() throws a TypeError for network/CORS failures.
+    if (e instanceof TypeError) throw new Error('Network or CORS error — the request could not reach the provider.');
+    throw e;
+  }
+  throw new Error('bad-provider');
+}
+function parseQuizJson(text) {
+  let t = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  let data = null;
+  try { data = JSON.parse(t); } catch {
+    const m = t.match(/[[{][\s\S]*[}\]]/);
+    if (m) { try { data = JSON.parse(m[0]); } catch {} }
+  }
+  if (!data) return [];
+  const arr = Array.isArray(data) ? data : (data.questions || data.quiz || []);
+  return arr
+    .filter((q) => q && q.question && Array.isArray(q.options) && q.options.length >= 2 && Number.isInteger(q.answer))
+    .map((q) => ({
+      question: String(q.question),
+      options: q.options.map(String).slice(0, 6),
+      answer: Math.max(0, Math.min(q.options.length - 1, q.answer)),
+      explanation: q.explanation ? String(q.explanation) : ''
+    }))
+    .slice(0, 10);
+}
+const DEMO_QUIZ = [
+  { question: 'What does it mean for an operation to be idempotent?', options: ['It can only ever run once', 'Applying it many times has the same effect as applying it once', 'It always fails when retried', 'It must talk to a database'], answer: 1, explanation: 'Idempotent operations give the same result whether applied once or many times.' },
+  { question: 'Why is idempotency valuable for reliable systems?', options: ['It makes code shorter', 'It makes retries safe — no duplicate side effects', 'It removes the need for testing', 'It speeds up the network'], answer: 1, explanation: 'Safe retries matter when a request can fail and be sent again.' },
+  { question: 'What characterises a declarative approach?', options: ['You write step-by-step instructions', 'You describe the desired state and let the tool reconcile it', 'You must use a graphical interface', 'It cannot be automated'], answer: 1, explanation: 'Declarative = describe the end state; the tool figures out how to reach it.' }
+];
+
+async function generateQuiz(video, n = 5) {
+  // The demo library always uses a built-in quiz so it works offline / without a key.
+  if (state.rootName === 'Demo Library') return DEMO_QUIZ.slice(0, n);
+  if (!aiConfig().key) throw new Error('no-key');
+  let source = (state.transcript || []).map((c) => c.text).join(' ').trim();
+  if (!source && state.notes.length) source = state.notes.map((nn) => nn.text).filter(Boolean).join('. ');
+  if (!source) throw new Error('no-source');
+  source = source.slice(0, 6000);
+  const prompt = `You are a quiz generator for a learning app. Using ONLY the lesson content below, write ${n} multiple-choice questions that test understanding of the key ideas. Each question must have exactly 4 options with exactly one correct answer. Respond with ONLY minified JSON (no markdown) in this shape: {"questions":[{"question":"...","options":["a","b","c","d"],"answer":0,"explanation":"short reason"}]} where "answer" is the 0-based index of the correct option.\n\nLesson title: ${video.title}\nContent:\n"""${source}"""`;
+  const text = await callAI(prompt);
+  const qs = parseQuizJson(text);
+  if (!qs.length) throw new Error('parse');
+  return qs;
+}
+
+// ── Quiz session ──────────────────────────────────────────────────────────────
+function quizAvailableFor(v) {
+  if (!v || v.kind === 'pdf') return false;
+  if (state.rootName === 'Demo Library') return true;
+  return Boolean(v.hasTranscript) && Boolean(aiConfig().key);
+}
+async function startQuiz(auto = false) {
+  const v = state.selectedVideo;
+  if (!v || v.kind === 'pdf') return;
+  el.quizModal.hidden = false;
+  el.quizProgress.textContent = 'Quiz';
+  el.quizBody.innerHTML = '<div class="quiz-loading"><div class="gate-spinner"></div><p>Generating your quiz…</p></div>';
+  try {
+    const questions = await generateQuiz(v, 5);
+    state.quiz = { video: v, questions, index: 0, answers: [], correct: 0, auto };
+    renderQuizQuestion();
+  } catch (e) {
+    if (auto) {
+      // Don't interrupt an auto-trigger with an error modal — close quietly.
+      el.quizModal.hidden = true;
+      state.quiz = null;
+      if (e.message !== 'no-source') toast(`Quiz unavailable · ${e.message.slice(0, 60)}`, 'warn', 4000);
+      return;
+    }
+    renderQuizError(e.message);
+  }
+}
+function renderQuizError(code) {
+  if (code === 'no-key') {
+    el.quizBody.innerHTML = `<div class="quiz-msg"><span class="icon icon-wand"></span><h3>Add an AI key to generate quizzes</h3><p>Quizzes are written by an AI model from the lesson transcript, using your own key — stored only in this browser.</p><button class="primary-button" id="quizOpenSettings">Open AI settings</button><p class="quiz-hint">Tip: Google Gemini has a free tier — no credit card needed.</p></div>`;
+    document.querySelector('#quizOpenSettings')?.addEventListener('click', () => { endQuiz(); openSettings(); });
+  } else if (code === 'no-source') {
+    el.quizBody.innerHTML = `<div class="quiz-msg"><h3>No transcript for this lesson</h3><p>AI quizzes read the lesson's transcript (a <b>.srt</b>/<b>.vtt</b> file next to the video) or your notes. Add one to enable quizzes here.</p><button class="primary-button" id="quizCloseMsg">Close</button></div>`;
+    document.querySelector('#quizCloseMsg')?.addEventListener('click', endQuiz);
+  } else if (code === 'parse') {
+    el.quizBody.innerHTML = `<div class="quiz-msg"><h3>Couldn't read the quiz</h3><p>The AI replied but the response wasn't valid quiz JSON. This is usually transient — try again, or switch model in Settings.</p><div class="quiz-result-actions" style="justify-content:center"><button class="pill-button" id="quizOpenSettings2">Settings</button><button class="primary-button" id="quizRetry">Retry</button></div></div>`;
+    document.querySelector('#quizRetry')?.addEventListener('click', () => startQuiz());
+    document.querySelector('#quizOpenSettings2')?.addEventListener('click', () => { endQuiz(); openSettings(); });
+  } else {
+    const net = /network or cors/i.test(code);
+    el.quizBody.innerHTML = `<div class="quiz-msg"><h3>Couldn't generate a quiz</h3><p>${escapeHtml(code)}</p><p class="quiz-hint">${net ? 'The request couldn’t reach the provider — check your connection. Some providers block direct browser calls.' : 'Check your provider, API key and model name in Settings, then retry.'}</p><div class="quiz-result-actions" style="justify-content:center"><button class="pill-button" id="quizOpenSettings2">Open settings</button><button class="primary-button" id="quizRetry">Retry</button></div></div>`;
+    document.querySelector('#quizRetry')?.addEventListener('click', () => startQuiz());
+    document.querySelector('#quizOpenSettings2')?.addEventListener('click', () => { endQuiz(); openSettings(); });
+  }
+}
+function renderQuizQuestion() {
+  const q = state.quiz;
+  if (!q) return;
+  if (q.index >= q.questions.length) { showQuizResults(); return; }
+  const item = q.questions[q.index];
+  el.quizProgress.textContent = `Question ${q.index + 1} / ${q.questions.length}`;
+  el.quizBody.innerHTML = `
+    <div class="quiz-q">${escapeHtml(item.question)}</div>
+    <div class="quiz-options">
+      ${item.options.map((o, i) => `<button class="quiz-opt" data-opt="${i}">${escapeHtml(o)}</button>`).join('')}
+    </div>
+    <div class="quiz-feedback" id="quizFeedback" hidden></div>
+    <button class="primary-button quiz-next" id="quizNext" hidden>${q.index + 1 < q.questions.length ? 'Next question' : 'See results'}</button>`;
+}
+function answerQuiz(optIndex) {
+  const q = state.quiz;
+  if (!q || q.answers[q.index] != null) return;
+  const item = q.questions[q.index];
+  q.answers[q.index] = optIndex;
+  const correct = optIndex === item.answer;
+  if (correct) q.correct++;
+  el.quizBody.querySelectorAll('.quiz-opt').forEach((b, i) => {
+    b.disabled = true;
+    if (i === item.answer) b.classList.add('correct');
+    else if (i === optIndex) b.classList.add('wrong');
+  });
+  const fb = document.querySelector('#quizFeedback');
+  fb.hidden = false;
+  fb.className = `quiz-feedback ${correct ? 'good' : 'bad'}`;
+  fb.innerHTML = `<strong>${correct ? 'Correct' : 'Not quite'}</strong>${item.explanation ? ` · ${escapeHtml(item.explanation)}` : ''}`;
+  const next = document.querySelector('#quizNext');
+  next.hidden = false;
+  next.focus();
+}
+function nextQuiz() { if (state.quiz) { state.quiz.index++; renderQuizQuestion(); } }
+function showQuizResults() {
+  const q = state.quiz;
+  const pct = Math.round((q.correct / q.questions.length) * 100);
+  el.quizProgress.textContent = 'Results';
+  el.quizBody.innerHTML = `
+    <div class="quiz-result">
+      <div class="quiz-score ${pct >= 70 ? 'good' : pct >= 40 ? 'mid' : 'low'}">${q.correct} / ${q.questions.length}</div>
+      <p>${pct >= 70 ? 'Great recall! 🎉' : pct >= 40 ? 'Good effort — revisit the ones you missed.' : 'Worth another pass through this lesson.'}</p>
+      <div class="quiz-result-actions">
+        <button class="pill-button" id="quizSaveCards"><span class="icon icon-layers"></span> Save as flashcards</button>
+        <button class="primary-button" id="quizDone">Done</button>
+      </div>
+    </div>`;
+  document.querySelector('#quizDone').addEventListener('click', endQuiz);
+  document.querySelector('#quizSaveCards').addEventListener('click', saveQuizAsCards);
+}
+function saveQuizAsCards() {
+  const q = state.quiz;
+  if (!q) return;
+  const v = q.video;
+  let added = 0;
+  for (const item of q.questions) {
+    const card = {
+      id: `c_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}_${added}`,
+      videoId: v.id, courseId: v.hierarchy[0], lessonTitle: v.title,
+      front: item.question, back: item.options[item.answer] + (item.explanation ? ` — ${item.explanation}` : ''),
+      t: null, createdAt: new Date().toISOString(),
+      srs: { interval: 0, ease: 2.5, reps: 0, lapses: 0, due: localDay(new Date()) }
+    };
+    db.saveCard(card).catch(() => {});
+    state.allCards.push(card);
+    if (state.selectedVideo?.id === v.id) state.cards.push(card);
+    added++;
+  }
+  updateCardsBadge();
+  if (!el.cardsDrawer.hidden) renderCards();
+  const btn = document.querySelector('#quizSaveCards');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="icon icon-circle-check"></span> Saved'; }
+  toast(`${added} flashcard${added === 1 ? '' : 's'} added`, 'success');
+}
+function endQuiz() {
+  el.quizModal.hidden = true;
+  state.quiz = null;
+}
+
+// ── Settings (AI) ─────────────────────────────────────────────────────────────
+const KEY_HINTS = {
+  gemini: 'Free key at <b>aistudio.google.com</b> — no credit card needed.',
+  openai: 'Key at <b>platform.openai.com</b> (paid, pay-as-you-go).',
+  anthropic: 'Key at <b>console.anthropic.com</b> (paid, pay-as-you-go).'
+};
+function openSettings() {
+  const cfg = aiConfig();
+  el.aiProvider.value = cfg.provider;
+  el.aiKey.value = cfg.key;
+  el.aiModel.value = cfg.model;
+  el.autoQuizToggle.checked = localStorage.getItem('lt:auto-quiz') !== '0';
+  syncSettingsProvider();
+  el.settingsModal.hidden = false;
+}
+function syncSettingsProvider() {
+  const p = el.aiProvider.value;
+  el.aiKeyHint.innerHTML = KEY_HINTS[p] || '';
+  el.aiModel.placeholder = `default: ${defaultModel(p)}`;
+}
+function saveSettings() {
+  localStorage.setItem('lt:ai-provider', el.aiProvider.value);
+  localStorage.setItem('lt:ai-key', el.aiKey.value.trim());
+  localStorage.setItem('lt:ai-model', el.aiModel.value.trim());
+  localStorage.setItem('lt:auto-quiz', el.autoQuizToggle.checked ? '1' : '0');
+  el.settingsModal.hidden = true;
+  toast('Settings saved', 'success');
+}
+
+// ── Backup & restore ──────────────────────────────────────────────────────────
+const BACKUP_STORES = ['progress', 'durations', 'activity', 'goals', 'achievements', 'notes', 'cards'];
+async function exportData() {
+  const data = {};
+  for (const s of BACKUP_STORES) {
+    const entries = await idbEntries(s);
+    data[s] = entries.map(({ key, value }) => ({ k: key, v: value }));
+  }
+  // Carry over preferences but never the API key (keep secrets out of backups).
+  const settings = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('lt:') && k !== 'lt:ai-key' && k !== 'lt:sidebar-collapsed') settings[k] = localStorage.getItem(k);
+  }
+  const payload = { app: 'learning-tracker', version: 1, exportedAt: new Date().toISOString(), data, settings };
+  downloadText(`learning-tracker-backup-${localDay(new Date())}.json`, JSON.stringify(payload, null, 2), 'application/json');
+  const totalItems = BACKUP_STORES.reduce((n, s) => n + data[s].length, 0);
+  toast(`Backup downloaded · ${totalItems} items`, 'success');
+}
+
+async function importData(file) {
+  let payload;
+  try { payload = JSON.parse(await file.text()); } catch { toast('That file isn’t valid JSON', 'warn'); return; }
+  if (payload.app !== 'learning-tracker' || !payload.data) { toast('Not a Learning Tracker backup', 'warn'); return; }
+  const counts = BACKUP_STORES
+    .map((s) => [(payload.data[s] || []).length, s])
+    .filter(([n]) => n > 0)
+    .map(([n, s]) => `${n} ${s}`)
+    .join(', ') || 'no items';
+  const ok = await confirmDialog({
+    title: 'Restore from backup?',
+    body: `This <strong>replaces</strong> your current progress, notes, cards, goals and stats with the backup (${escapeHtml(counts)}). Your course files aren’t affected.`,
+    okLabel: 'Restore'
+  });
+  if (!ok) return;
+  for (const s of BACKUP_STORES) {
+    await idbClear(s);
+    for (const { k, v } of (payload.data[s] || [])) await idbPut(s, k, v);
+  }
+  if (payload.settings) {
+    for (const [k, val] of Object.entries(payload.settings)) {
+      if (typeof k === 'string' && k.startsWith('lt:') && k !== 'lt:ai-key') localStorage.setItem(k, val);
+    }
+  }
+  toast('Backup restored — reloading…', 'success');
+  setTimeout(() => location.reload(), 900);
+}
+
 function expandVideoPath(video) {
   let path = '';
   for (const segment of video.hierarchy) {
@@ -2348,10 +2705,15 @@ function saveProgress(event, options = {}) {
   db.saveProgress(video.id, { ...video.progress }).catch(() => {});
 
   if (!wasCompleted && video.progress.completed) {
-    toast(`Completed · ${video.title}`, 'success', 4000);
     recordActivity({ completed: 1 });
     renderHero();
     evaluateAchievements();
+    toast(`Completed · ${video.title}`, 'success', 3500);
+    // If the user finished by reaching the end, the 'ended' handler offers the quiz.
+    // If they completed early (e.g. scrubbed to ~end), offer a tappable quiz instead.
+    if (event !== 'ended' && quizAvailableFor(video) && localStorage.getItem('lt:auto-quiz') !== '0') {
+      toast('Quiz yourself on this lesson 🎓', 'info', 6000, () => startQuiz());
+    }
   }
 
   renderVideoStats();
