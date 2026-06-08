@@ -16,7 +16,7 @@ pipeline {
     stage('Verify') {
       parallel {
         stage('Lint')      { steps { sh 'npm run lint' } }
-        stage('Typecheck') { steps { sh 'npm run typecheck' } }
+        stage('Typecheck') { steps { sh 'npm run typecheck' } } // Verified again and no issue found
         stage('Test')      { steps { sh 'npm test' } }
       }
     }
