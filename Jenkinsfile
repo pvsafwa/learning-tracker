@@ -1,12 +1,13 @@
 pipeline {
-    agent any
+    agent { docker { image 'node:22'}}
     stages {
-        stage('Checkout sanity') {
+        stage('Tooling') {
             steps {
                 echo 'Jenkins is connected to the repo 🎉'
-                sh 'ls -la'
+                sh 'node --version'
+                sh 'npm --version'
                 sh 'git log -1 --oneline'
-                
+
             }
         }
     }
