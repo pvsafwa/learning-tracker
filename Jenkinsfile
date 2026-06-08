@@ -1,27 +1,30 @@
 pipeline {
-    agent { docker { image 'node:22'}}
-    options {
-        timestamps()
-        timeout(time: 15, unit: 'MINUTES')
-        disableConcurrentBuilds()
+  agent { docker { image 'node:22' } }
+
+  options {
+    timestamps()                        // timestamp each log line (needs Timestamper plugin)
+    timeout(time: 15, unit: 'MINUTES')  // kill a hung build instead of running forever
+    disableConcurrentBuilds()           // two builds of this branch would fight over the workspace
+  }
+
+  stages {
+    stage('Install') {
+      steps {
+        sh 'npm ci'                      // clean, lockfile-exact, reproducible
+      }
     }
-    stages {
-        stage('install') {
-            steps {
-                sh 'npm ci'
-            }
-        }
-        stage('verify') {
-            parallel {
-                stage('Lint') { steps { sh 'npm run lint' }}
-                stage('typecheck') { steps ( sh 'npm run typecheck')}
-                stage('Test') { steps { sh 'npm test'}}
-            }
-        }
+    stage('Verify') {
+      parallel {
+        stage('Lint')      { steps { sh 'npm run lint' } }
+        stage('Typecheck') { steps { sh 'npm run typecheck' } }
+        stage('Test')      { steps { sh 'npm test' } }
+      }
     }
-    post {
-        success { echo '✅ CI passed — safe to build & deploy'}
-        failure { echo '❌ CI failed — open the red stage above' }
-        always { sh 'node --version' }
-    }
+  }
+
+  post {
+    success { echo '✅ CI passed — safe to build & deploy' }
+    failure { echo '❌ CI failed — open the red stage above' }
+    always  { sh 'node --version' }      // cheap breadcrumb of what ran it
+  }
 }
