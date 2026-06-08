@@ -1,85 +1,119 @@
 # Learning Tracker
 
-A self-hosted web app for tracking progress through your course videos, audio lessons, and PDFs.
+A self-hosted, invite-only web app for tracking progress through course videos, audio lessons, and PDFs. Sign in with Google; only accounts an admin has added can get in. Each user's progress, notes, flashcards, goals and achievements are stored server-side in PostgreSQL.
 
-The **server** holds your course folders and streams each file to the browser; the **browser** plays them and keeps your progress, goals, streaks, notes, and flashcards in local storage (IndexedDB). Run it on any machine that can reach your media — a home server, a NAS, an Ubuntu box on your LAN, AWS — and open the URL from anywhere on the network.
+## Architecture (3-tier)
 
-Because the files are served by the app itself (not read from the visitor's own disk), **it works over plain HTTP** — no HTTPS and no special browser required. It runs in any modern browser.
+```
+Presentation tier   public/        Static SPA (vanilla JS). Talks to the API; holds no user data.
+        │ HTTPS + session cookie
+Application tier     src/           Node + Express + TypeScript. Google OAuth + allowlist,
+        │ SQL                       REST API, authenticated media streaming. Stateless.
+Data tier            PostgreSQL     Users/allowlist, sessions, progress, notes, cards, goals…
+                     courses/       Media files on a mounted volume (streamed, never uploaded).
+```
 
-## Quick start
+The app tier is **stateless** (all shared state is in Postgres), so it scales horizontally and fits containers/Kubernetes cleanly.
 
-1. Put your course folders inside the `courses/` directory next to `server.mjs` (or point somewhere else with `COURSES_DIR`, see below).
-2. Start the server:
-   ```sh
-   node server.mjs
-   ```
-3. Open `http://<server-ip>:4173` (or `http://localhost:4173` on the same machine).
+## Prerequisites
 
-Each top-level folder under the courses directory becomes a course; nested subfolders form an expandable tree. Drop a `.srt`/`.vtt` next to a video (same name) to get captions + a searchable transcript.
+- [Docker](https://www.docker.com/) + Docker Compose (easiest), **or** Node ≥ 20 and a PostgreSQL 14+ instance.
+- A **Google OAuth client** (for real sign-in) — see below.
 
-## Configuration
-
-| Variable      | Default     | Purpose                                                                      |
-| ------------- | ----------- | --------------------------------------------------------------------------- |
-| `COURSES_DIR` | `./courses` | Folder that holds your course folders. Absolute or relative to `server.mjs`. |
-| `PORT`        | `4173`      | Port to listen on.                                                          |
-| `HOST`        | `0.0.0.0`   | Bind address (default: all interfaces).                                     |
-
-Example — point at courses elsewhere on the box and use a different port:
+## 1. Configure
 
 ```sh
-COURSES_DIR=/home/me/Videos/Courses PORT=8080 node server.mjs
+cp .env.example .env
 ```
 
-Supported media: video (`.mp4`, `.mkv`, `.mov`, `.webm`, …), audio (`.mp3`, `.m4a`, `.flac`, …), and `.pdf`. Files stream with HTTP range support, so seeking and resume work.
+Edit `.env`:
 
-### Run it as a background service (Ubuntu / systemd)
+| Variable             | Required | Purpose                                                                 |
+| -------------------- | -------- | ----------------------------------------------------------------------- |
+| `DATABASE_URL`       | yes      | PostgreSQL connection string.                                           |
+| `SESSION_SECRET`     | yes      | Random string for signing session cookies. `openssl rand -hex 32`.      |
+| `APP_BASE_URL`       | yes      | Public URL, no trailing slash. Used to build the OAuth callback.        |
+| `GOOGLE_CLIENT_ID`   | yes\*    | Google OAuth client id.                                                 |
+| `GOOGLE_CLIENT_SECRET`| yes\*   | Google OAuth client secret.                                             |
+| `ADMIN_EMAILS`       | yes      | Comma-separated Google emails seeded as admins on boot.                 |
+| `COURSES_DIR`        | no       | Folder holding your course folders (default `./courses`).               |
+| `PORT` / `HOST`      | no       | Defaults `4173` / `0.0.0.0`.                                            |
+| `DEV_LOGIN_ENABLED`  | no       | `true` enables a password-less local login for testing. **Never in prod.** |
 
-```ini
-# /etc/systemd/system/learning-tracker.service
-[Unit]
-Description=Learning Tracker
-After=network.target
+\* Google sign-in is disabled until both are set (handy for first local runs with `DEV_LOGIN_ENABLED=true`).
 
-[Service]
-WorkingDirectory=/opt/learning-tracker
-Environment=COURSES_DIR=/srv/courses
-Environment=PORT=4173
-ExecStart=/usr/bin/node server.mjs
-Restart=on-failure
+### Google OAuth setup
 
-[Install]
-WantedBy=multi-user.target
-```
+1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → **Create credentials → OAuth client ID → Web application**.
+2. Add an **Authorized redirect URI** that exactly matches: `${APP_BASE_URL}/auth/google/callback`
+   (e.g. `https://learn.example.com/auth/google/callback`).
+3. Copy the client id/secret into `.env`.
+
+> Production needs **HTTPS** — Google requires it for non-localhost redirect URIs, and the app sets `Secure` session cookies in production. Terminate TLS at a reverse proxy (Caddy/nginx/Traefik) or load balancer in front of the app.
+
+## 2. Run
+
+### With Docker Compose (recommended)
 
 ```sh
-sudo systemctl enable --now learning-tracker
+docker compose up --build
 ```
 
-## How the data works
+Brings up PostgreSQL + the app, runs migrations automatically, and serves on `http://localhost:4173`. Put your course folders in `./courses` (mounted read-only) or set `COURSES_DIR`.
 
-- **Your media** is read only by the server and streamed over HTTP; it is never copied into the app or uploaded anywhere else.
-- **Your progress** (watch position, completion, durations, activity, notes, flashcards, goals, achievements) lives in **your browser's** IndexedDB. It is per browser/device — there's no account or central database, so two people using the same server each keep their own tracking. Use **Backup & restore** (Settings) to move your data between browsers/devices.
+### Locally for development
+
+```sh
+# Postgres (or use your own and set DATABASE_URL)
+docker compose up -d db
+npm install
+npm run dev          # tsx watch; runs migrations on boot
+```
+
+## 3. Manage access (admin)
+
+The emails in `ADMIN_EMAILS` become admins on boot. As an admin, click the **avatar → Manage users** to add/remove people, grant admin, or disable accounts — all from the app. A person can sign in only after their exact Google email is on the list.
+
+## Scripts
+
+| Command            | What it does                                          |
+| ------------------ | ----------------------------------------------------- |
+| `npm run dev`      | Dev server (tsx watch) + auto-migrate.                |
+| `npm run build`    | Compile TypeScript → `dist/`.                         |
+| `npm start`        | Run the compiled server (`dist/server.js`).           |
+| `npm run migrate`  | Apply DB migrations (compiled). `migrate:dev` for ts. |
+| `npm test`         | Unit tests (Vitest) — no DB needed.                   |
+| `npm run lint` / `npm run typecheck` | ESLint / `tsc --noEmit`.            |
+
+## Project layout
+
+```
+src/
+  config.ts              env validation (zod), 12-factor config
+  server.ts              entrypoint: migrate → seed admins → listen
+  app.ts                 Express app factory (helmet/CSP, sessions, routes)
+  auth/                  passport Google strategy + allowlist, auth routes
+  middleware/            requireAuth/requireAdmin, async + error handling
+  routes/                me, library, progress, notes, cards, goals, achievements, admin
+  db/
+    pool.ts              pg connection pool
+    migrate.ts           forward-only SQL migration runner (advisory-locked)
+    repositories/        one module per table
+  lib/                   scan (library), stream (range), media types, logger
+migrations/              *.sql, applied in order
+public/                  the SPA (presentation tier)
+```
+
+## Data & privacy
+
+- **Media** is read by the server and streamed to authenticated users; never uploaded elsewhere.
+- **Per-user data** (progress, activity, notes, flashcards, goals, achievements) lives in PostgreSQL, keyed to the user — not in the browser. UI preferences (theme, volume) stay in `localStorage`.
+- **Auth**: server-side sessions (httpOnly, SameSite=Lax, Secure in prod) stored in Postgres. Only the user id is kept in the session and re-validated against the DB each request, so disabling/removing a user takes effect immediately.
 
 ## Features
 
-- Resume videos/audio from where you left off; durations are read automatically in the background.
-- A **dashboard** with time invested (today / week / lifetime), a study **streak**, an activity **heatmap**, **continue watching**, **goals** with deadlines & pace projection, **flashcards due**, and **achievements**.
-- **Active-learning tools:**
-  - **Timestamped notes & bookmarks** — capture at the current moment, click to jump back, export to Markdown.
-  - **Captions & transcript** — drop a `.srt`/`.vtt` next to a video; get on-screen captions plus a searchable, click-to-seek transcript.
-  - **Flashcards + spaced repetition** — make Q&A cards (SM-2 scheduling) and review what's due, right on the dashboard.
-  - **AI quizzes** — generate an end-of-lesson multiple-choice quiz from the transcript using your own API key (Google **Gemini** has a free tier; OpenAI and Anthropic also supported). Set it up in **Settings**; quizzes are cached per lesson and can be saved as flashcards.
-- **Backup & restore** — export all your data to a JSON file and import it on another device (Settings → Backup & restore).
-- Search, filter (in progress / completed / not started), light & dark themes, keyboard shortcuts, Picture-in-Picture, and per-lesson / per-course / all progress reset.
-- A built-in **demo library** ("explore a demo") to try the app without any media on the server.
+Resume playback, background duration probing, a dashboard (time invested, streak, heatmap, continue-watching, goals with pace projection, flashcards due, achievements), timestamped notes & bookmarks, sidecar `.srt`/`.vtt` captions + searchable transcript, SM-2 spaced-repetition flashcards, search/filter, light & dark themes, keyboard shortcuts, PiP, and per-lesson / per-course / all progress reset.
 
 ## Keyboard shortcuts
 
-`Space` play/pause · `←/→` seek 10s · `↑/↓` volume · `M` mute · `C` captions · `B` bookmark · `F` fullscreen · `N`/`P` next/previous · `[` toggle sidebar · `?` shortcuts. In a quiz/review: `Space` to reveal, `1–4` to grade.
-
-## Privacy
-
-- Media files never leave the server except as a stream to the browser that requested them.
-- Progress and all tracking data stay in each visitor's browser (IndexedDB); preferences and your AI key live in localStorage. The AI key is never included in exported backups.
-- AI quizzes send the lesson transcript directly from the browser to your chosen AI provider, using your own key.
+`Space` play/pause · `←/→` seek 10s · `↑/↓` volume · `M` mute · `C` captions · `B` bookmark · `F` fullscreen · `N`/`P` next/previous · `[` toggle sidebar · `?` shortcuts.

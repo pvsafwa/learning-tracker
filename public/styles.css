@@ -134,6 +134,7 @@ h1, h2, h3, p { margin: 0; }
 .icon-eye-off      { -webkit-mask-image: url("/icons/eye-off.svg");          mask-image: url("/icons/eye-off.svg"); }
 .icon-wand         { -webkit-mask-image: url("/icons/wand-sparkles.svg");    mask-image: url("/icons/wand-sparkles.svg"); }
 .icon-upload       { -webkit-mask-image: url("/icons/upload.svg");           mask-image: url("/icons/upload.svg"); }
+.icon-users        { -webkit-mask-image: url("/icons/users.svg");            mask-image: url("/icons/users.svg"); }
 
 /* ── Sidebar ─────────────────────────────────────────────────── */
 .sidebar {
@@ -1490,3 +1491,69 @@ html[data-theme="light"] .toast {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ── Account / user avatar ─────────────────────────────────────────────────── */
+.user-button { padding: 3px; }
+.user-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, #ff8a3d, #ff4d8d 55%, #a855f7);
+  background-size: cover; background-position: center; text-transform: uppercase;
+}
+.account-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+.account-id { display: flex; align-items: center; gap: 14px; }
+.account-avatar {
+  width: 52px; height: 52px; border-radius: 50%; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, #ff8a3d, #ff4d8d 55%, #a855f7);
+  background-size: cover; background-position: center; text-transform: uppercase;
+}
+.account-id-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.account-id-text strong { font-size: 15px; }
+.account-email { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+.account-role {
+  margin-left: auto; align-self: flex-start; font-size: 11px; font-weight: 700;
+  padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--text-soft);
+}
+.account-role.admin { background: rgba(168,85,247,0.18); color: #d8b4fe; }
+.admin-open { width: 100%; justify-content: center; }
+.danger-button { background: #e1473d; }
+.danger-button:hover { background: #c93b32; }
+
+/* ── Admin: user list ──────────────────────────────────────────────────────── */
+.admin-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; max-height: 70vh; }
+.admin-add { display: flex; gap: 8px; }
+.admin-add input { flex: 1; }
+.admin-add select { flex: 0 0 auto; }
+.admin-user-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.admin-user {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--panel-hi);
+}
+.admin-user.is-disabled { opacity: 0.55; }
+.admin-user-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.admin-user-email { font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; }
+.admin-user-meta { font-size: 11.5px; color: var(--muted); }
+.admin-user-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.admin-act {
+  font-size: 11.5px; font-weight: 600; padding: 5px 9px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel-solid); color: var(--text-soft);
+}
+.admin-act:hover { color: var(--text); border-color: var(--muted); }
+.admin-act.danger { color: #e9897f; }
+.admin-act.danger:hover { background: rgba(225,71,61,0.12); border-color: #e1473d; }
+.admin-empty, .admin-loading { padding: 22px; text-align: center; color: var(--muted); font-size: 13px; }
+.admin-loading { display: flex; justify-content: center; }
+
+/* ── Sign-in gate ──────────────────────────────────────────────────────────── */
+.google-btn { text-decoration: none; }
+.g-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%; background: #fff; color: #4285f4;
+  font-weight: 800; font-size: 12px;
+}
+.gate-error { color: #f0a; color: #ff9bb3; font-size: 13px; }
+.gate-dev { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.gate-dev input { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-hi); color: var(--text); font-size: 12.5px; }

@@ -1,0 +1,47 @@
+# Local multi-tier stack: PostgreSQL (data tier) + the Node API/app tier.
+# Usage:
+#   cp .env.example .env   # fill in values (or rely on the defaults below)
+#   docker compose up --build
+# Then open http://localhost:4173
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lt
+      POSTGRES_PASSWORD: lt_password
+      POSTGRES_DB: learning_tracker
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lt -d learning_tracker"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4173
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:4173}
+      SESSION_SECRET: ${SESSION_SECRET:-dev-insecure-change-me}
+      DATABASE_URL: postgres://lt:lt_password@db:5432/learning_tracker
+      COURSES_DIR: /courses
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      DEV_LOGIN_ENABLED: ${DEV_LOGIN_ENABLED:-false}
+    volumes:
+      # Mount your course media read-only into the container.
+      - ${COURSES_DIR:-./courses}:/courses:ro
+    ports:
+      - "4173:4173"
+
+volumes:
+  db-data:

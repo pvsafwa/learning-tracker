@@ -177,26 +177,25 @@ const el = {
   flashSection:     document.querySelector('#flashSection'),
   flashSub:         document.querySelector('#flashSub'),
   flashCta:         document.querySelector('#flashCta'),
-  // Settings
-  settingsButton:   document.querySelector('#settingsButton'),
+  // Account
+  userButton:       document.querySelector('#userButton'),
+  userAvatar:       document.querySelector('#userAvatar'),
   settingsModal:    document.querySelector('#settingsModal'),
   settingsClose:    document.querySelector('#settingsClose'),
-  aiProvider:       document.querySelector('#aiProvider'),
-  aiKey:            document.querySelector('#aiKey'),
-  aiKeyShow:        document.querySelector('#aiKeyShow'),
-  aiKeyHint:        document.querySelector('#aiKeyHint'),
-  aiModel:          document.querySelector('#aiModel'),
-  autoQuizToggle:   document.querySelector('#autoQuizToggle'),
-  settingsSave:     document.querySelector('#settingsSave'),
-  exportBtn:        document.querySelector('#exportBtn'),
-  importBtn:        document.querySelector('#importBtn'),
-  importFile:      document.querySelector('#importFile'),
-  // Quiz
-  quizButton:       document.querySelector('#quizButton'),
-  quizModal:        document.querySelector('#quizModal'),
-  quizProgress:     document.querySelector('#quizProgress'),
-  quizClose:        document.querySelector('#quizClose'),
-  quizBody:         document.querySelector('#quizBody')
+  accountAvatar:    document.querySelector('#accountAvatar'),
+  accountName:      document.querySelector('#accountName'),
+  accountEmail:     document.querySelector('#accountEmail'),
+  accountRole:      document.querySelector('#accountRole'),
+  signOutBtn:       document.querySelector('#signOutBtn'),
+  adminOpenBtn:     document.querySelector('#adminOpenBtn'),
+  // Admin
+  adminModal:       document.querySelector('#adminModal'),
+  adminClose:       document.querySelector('#adminClose'),
+  adminUserList:    document.querySelector('#adminUserList'),
+  adminAddEmail:    document.querySelector('#adminAddEmail'),
+  adminAddRole:     document.querySelector('#adminAddRole'),
+  adminAddBtn:      document.querySelector('#adminAddBtn'),
+  adminHint:        document.querySelector('#adminHint')
 };
 
 // ── Boot ────────────────────────────────────────────────────────────────────
@@ -209,104 +208,127 @@ async function init() {
   applyPrefs();
   bindEvents();
   initResize();
+  await boot();
+}
+
+// ── Auth & boot ───────────────────────────────────────────────────────────────
+// Ask the API who we are. Not signed in → show the sign-in gate. Signed in →
+// load the library and the user's data from the server.
+async function boot() {
+  let me;
+  try {
+    me = await fetch('/api/me', { credentials: 'same-origin' }).then((r) => r.json());
+  } catch {
+    showGate('error', 'the server');
+    return;
+  }
+  state.auth = me;
+  if (!me.authenticated) { showSignIn(); return; }
+  state.user = me.user;
+  updateUserUI();
   await loadServerLibrary();
 }
 
+function showSignIn() {
+  const reason = new URLSearchParams(location.search).get('auth') || '';
+  state.view = 'signin';
+  showGate('signin', reason);
+}
+
+// Called by the API client whenever a request comes back 401 (session expired
+// or revoked). Drop back to the sign-in gate.
+function onUnauthorized() {
+  if (state.view === 'signin') return;
+  state.user = null;
+  updateUserUI();
+  showSignIn();
+}
+
+async function signOut() {
+  try { await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch {}
+  location.href = '/';
+}
+
+async function devLogin() {
+  const email = (document.querySelector('#devEmail')?.value || '').trim().toLowerCase();
+  if (!email) return;
+  try {
+    const res = await fetch('/auth/dev', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+    });
+    if (!res.ok) { showGate('signin', 'denied'); return; }
+    location.href = '/';
+  } catch { showGate('signin', 'denied'); }
+}
+
+function updateUserUI() {
+  const u = state.user;
+  if (!el.userButton) return;
+  el.userButton.hidden = !u;
+  if (!u || !el.userAvatar) return;
+  const initial = (u.name || u.email || '?').trim().charAt(0).toUpperCase();
+  if (u.picture) {
+    el.userAvatar.style.backgroundImage = `url("${u.picture}")`;
+    el.userAvatar.textContent = '';
+    el.userAvatar.classList.add('has-photo');
+  } else {
+    el.userAvatar.style.backgroundImage = '';
+    el.userAvatar.textContent = initial;
+    el.userAvatar.classList.remove('has-photo');
+  }
+  el.userButton.title = u.email || 'Account';
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
-// DATA LAYER
+// DATA LAYER (presentation tier → application tier)
 // The server hosts the course files (listed via /api/library, streamed via
-// /api/file). Each browser stores its own tracking data in IndexedDB, so every
-// visitor keeps separate progress without any account or central database.
+// /api/file) AND every user's progress (in PostgreSQL). The browser keeps no
+// progress locally — it talks to the REST API, carrying the session cookie.
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ── IndexedDB ─────────────────────────────────────────────────────────────────
-const DB_NAME = 'learning-tracker';
-const DB_VERSION = 4;
-const STORES = ['progress', 'durations', 'activity', 'goals', 'achievements', 'handles', 'meta', 'notes', 'cards', 'quizzes'];
-let _dbPromise = null;
-
-function openDB() {
-  if (_dbPromise) return _dbPromise;
-  _dbPromise = new Promise((res, rej) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const idb = req.result;
-      for (const s of STORES) if (!idb.objectStoreNames.contains(s)) idb.createObjectStore(s);
-    };
-    req.onsuccess = () => res(req.result);
-    req.onerror = () => rej(req.error);
-  });
-  return _dbPromise;
-}
-function idbGet(store, key) {
-  return openDB().then((idb) => new Promise((res, rej) => {
-    const r = idb.transaction(store, 'readonly').objectStore(store).get(key);
-    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
-  }));
-}
-function idbPut(store, key, val) {
-  return openDB().then((idb) => new Promise((res, rej) => {
-    const tx = idb.transaction(store, 'readwrite');
-    tx.objectStore(store).put(val, key);
-    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
-  }));
-}
-function idbDelete(store, key) {
-  return openDB().then((idb) => new Promise((res, rej) => {
-    const tx = idb.transaction(store, 'readwrite');
-    tx.objectStore(store).delete(key);
-    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
-  }));
-}
-function idbClear(store) {
-  return openDB().then((idb) => new Promise((res, rej) => {
-    const tx = idb.transaction(store, 'readwrite');
-    tx.objectStore(store).clear();
-    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
-  }));
-}
-function idbEntries(store) {
-  return openDB().then((idb) => new Promise((res, rej) => {
-    const out = [];
-    const cur = idb.transaction(store, 'readonly').objectStore(store).openCursor();
-    cur.onsuccess = () => { const c = cur.result; if (c) { out.push({ key: c.key, value: c.value }); c.continue(); } else res(out); };
-    cur.onerror = () => rej(cur.error);
-  }));
+async function api(path, opts = {}) {
+  const init = { credentials: 'same-origin', ...opts };
+  if (opts.body !== undefined) {
+    init.headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  }
+  const res = await fetch('/api' + path, init);
+  if (res.status === 401) { onUnauthorized(); throw new Error('unauthorized'); }
+  if (!res.ok) {
+    let detail = '';
+    try { detail = (await res.json())?.error || ''; } catch {}
+    throw new Error(`api ${res.status} ${path}${detail ? ' ' + detail : ''}`);
+  }
+  if (res.status === 204) return null;
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('application/json') ? res.json() : res.text();
 }
 
 const db = {
-  async getProgressMap() { const e = await idbEntries('progress'); const m = {}; for (const { key, value } of e) m[key] = value; return m; },
-  saveProgress(id, rec) { return idbPut('progress', id, rec); },
-  async deleteProgress(ids) { for (const id of ids) await idbDelete('progress', id); },
-  async resetProgress(idsOrAll) { if (idsOrAll === 'all') await idbClear('progress'); else await this.deleteProgress(idsOrAll); },
-  async getDurations() { const e = await idbEntries('durations'); const m = {}; for (const { key, value } of e) m[key] = value; return m; },
-  saveDuration(id, sec) { return idbPut('durations', id, sec); },
-  async getActivity() {
-    const e = await idbEntries('activity');
-    return e.map(({ key, value }) => ({ day: key, watchSeconds: value.watchSeconds || 0, completedCount: value.completedCount || 0 }))
-            .sort((a, b) => (a.day < b.day ? -1 : 1));
-  },
-  async recordActivity(day, seconds, completed) {
-    const cur = (await idbGet('activity', day)) || { watchSeconds: 0, completedCount: 0 };
-    cur.watchSeconds = (cur.watchSeconds || 0) + seconds;
-    cur.completedCount = (cur.completedCount || 0) + completed;
-    return idbPut('activity', day, cur);
-  },
-  async getGoals() { const e = await idbEntries('goals'); return e.map(({ value }) => value).sort((a, b) => ((a.createdAt || '') < (b.createdAt || '') ? -1 : 1)); },
-  saveGoal(goal) { return idbPut('goals', goal.id, goal); },
-  deleteGoal(id) { return idbDelete('goals', id); },
-  async getAchievements() { const e = await idbEntries('achievements'); return e.map(({ key, value }) => ({ id: key, earnedAt: value.earnedAt })); },
-  async saveAchievements(ids) { const now = new Date().toISOString(); for (const id of ids) await idbPut('achievements', id, { earnedAt: now }); },
-  getHandle() { return idbGet('handles', 'root'); },
-  saveHandle(h) { return idbPut('handles', 'root', h); },
-  async getNotes(videoId) { return (await idbGet('notes', videoId)) || []; },
-  saveNotes(videoId, arr) { return arr.length ? idbPut('notes', videoId, arr) : idbDelete('notes', videoId); },
-  async getAllNotes() { const e = await idbEntries('notes'); const m = {}; for (const { key, value } of e) m[key] = value; return m; },
-  async getAllCards() { const e = await idbEntries('cards'); return e.map(({ value }) => value); },
-  saveCard(card) { return idbPut('cards', card.id, card); },
-  deleteCard(id) { return idbDelete('cards', id); },
-  getQuiz(videoId) { return idbGet('quizzes', videoId); },
-  saveQuiz(videoId, questions) { return idbPut('quizzes', videoId, { questions, generatedAt: new Date().toISOString() }); }
+  getProgressMap: () => api('/progress'),
+  saveProgress: (id, rec) => api(`/progress/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(rec) }),
+  resetProgress: (idsOrAll) =>
+    api('/progress/reset', { method: 'POST', body: JSON.stringify(idsOrAll === 'all' ? { all: true } : { ids: idsOrAll }) }),
+  getDurations: () => api('/durations'),
+  saveDuration: (id, sec) => api('/durations', { method: 'POST', body: JSON.stringify({ videoId: id, seconds: sec }) }),
+  getActivity: () => api('/activity'),
+  recordActivity: (day, seconds, completed) =>
+    api('/activity', { method: 'POST', body: JSON.stringify({ day, seconds, completed }) }),
+  getGoals: () => api('/goals'),
+  saveGoal: (goal) => api('/goals', { method: 'POST', body: JSON.stringify(goal) }),
+  deleteGoal: (id) => api(`/goals/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  getAchievements: () => api('/achievements'),
+  saveAchievements: (ids) => api('/achievements', { method: 'POST', body: JSON.stringify({ ids }) }),
+  getNotes: (videoId) => api(`/notes/${encodeURIComponent(videoId)}`),
+  saveNotes: (videoId, arr) => api(`/notes/${encodeURIComponent(videoId)}`, { method: 'PUT', body: JSON.stringify(arr) }),
+  getAllCards: () => api('/cards'),
+  saveCard: (card) => api(`/cards/${encodeURIComponent(card.id)}`, { method: 'PUT', body: JSON.stringify(card) }),
+  deleteCard: (id) => api(`/cards/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  // Admin (allowlist management)
+  adminListUsers: () => api('/admin/users'),
+  adminAddUser: (email, role) => api('/admin/users', { method: 'POST', body: JSON.stringify({ email, role }) }),
+  adminUpdateUser: (id, patch) => api(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  adminDeleteUser: (id) => api(`/admin/users/${id}`, { method: 'DELETE' })
 };
 
 async function getStats() {
@@ -412,93 +434,7 @@ async function fetchServerScan() {
 }
 
 async function fileURLFor(video) {
-  if (video._url) return video._url;            // server-streamed file
-  const file = await video._handle.getFile();   // demo blob
-  return URL.createObjectURL(file);
-}
-
-// ── Demo mode ─────────────────────────────────────────────────────────────────
-// Loads a built-in sample library backed by generated, playable files. Lets the
-// app run without picking a folder — handy as a preview and for testing.
-async function loadDemo() {
-  state.dirHandle = null;
-  state.rootName = 'Demo Library';
-  const wav = makeSilentWav(18);
-  const pdf = makeTinyPdf('Demo Cheat Sheet');
-  const vtt = new Blob([DEMO_VTT], { type: 'text/vtt' });
-  const fh = (blob, name) => ({ getFile: async () => new File([blob], name, { type: blob.type }) });
-  const raw = [];
-  const subs = [];
-  const add = (parts, blob) => raw.push({ name: parts[parts.length - 1], ext: extOf(parts[parts.length - 1]), relParts: parts, handle: fh(blob, parts[parts.length - 1]) });
-  add(['Getting Started', '01 Welcome.wav'], wav);
-  add(['Getting Started', '02 How it works.wav'], wav);
-  add(['Getting Started', 'Overview.pdf'], pdf);
-  add(['Deep Dive', 'Module 1', 'Core concepts.wav'], wav);
-  add(['Deep Dive', 'Module 1', 'A worked example.wav'], wav);
-  add(['Deep Dive', 'Module 2', 'Putting it together.wav'], wav);
-  add(['Deep Dive', 'Module 2', 'Cheat sheet.pdf'], pdf);
-  // Sidecar transcript for "Core concepts" (same folder + basename).
-  subs.push({ name: 'Core concepts.vtt', ext: '.vtt', dir: 'Deep Dive/Module 1', handle: fh(vtt, 'Core concepts.vtt') });
-
-  const [progressMap, durationMap] = await Promise.all([db.getProgressMap(), db.getDurations()]);
-  state.library = buildLibrary(raw, state.rootName, progressMap, durationMap, subs);
-  el.sourceRoot.textContent = state.rootName;
-  await loadStats();
-  render();
-  hideGate();
-  evaluateAchievements();
-  showDashboard();
-  probeDurations();
-}
-
-function makeSilentWav(seconds = 12, sampleRate = 8000) {
-  const samples = seconds * sampleRate;
-  const dataSize = samples * 2;
-  const buf = new ArrayBuffer(44 + dataSize);
-  const dv = new DataView(buf);
-  const str = (off, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(off + i, s.charCodeAt(i)); };
-  str(0, 'RIFF'); dv.setUint32(4, 36 + dataSize, true); str(8, 'WAVE');
-  str(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
-  dv.setUint32(24, sampleRate, true); dv.setUint32(28, sampleRate * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
-  str(36, 'data'); dv.setUint32(40, dataSize, true);
-  return new Blob([buf], { type: 'audio/wav' });
-}
-
-const DEMO_VTT = `WEBVTT
-
-00:00:00.000 --> 00:00:03.000
-Welcome to the core concepts lesson.
-
-00:00:03.000 --> 00:00:06.500
-An operation is idempotent when applying it many times has the same effect as applying it once.
-
-00:00:06.500 --> 00:00:10.000
-Idempotency is essential for reliable, retry-safe systems.
-
-00:00:10.000 --> 00:00:13.500
-We'll also cover declarative versus imperative approaches.
-
-00:00:13.500 --> 00:00:18.000
-Declarative means you describe the desired state and let the tool reconcile it.
-`;
-
-function makeTinyPdf(text) {
-  const objs = [
-    '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 420 260] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>'
-  ];
-  const stream = `BT /F1 24 Tf 50 150 Td (${text}) Tj ET`;
-  objs.push(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
-  objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
-  let body = '%PDF-1.4\n';
-  const offsets = [];
-  objs.forEach((o, i) => { offsets.push(body.length); body += `${i + 1} 0 obj\n${o}\nendobj\n`; });
-  const xref = body.length;
-  body += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
-  offsets.forEach((off) => { body += `${String(off).padStart(10, '0')} 00000 n \n`; });
-  body += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return new Blob([body], { type: 'application/pdf' });
+  return video._url; // server-streamed file (/api/file?path=…)
 }
 
 // ── Library building (client-side) ────────────────────────────────────────────
@@ -584,7 +520,27 @@ function showGate(kind, name = '') {
   el.gate.hidden = false;
   const mark = '<div class="gate-mark">LT</div>';
   let body = '';
-  if (kind === 'scanning') {
+  if (kind === 'signin') {
+    const reason = name; // 'denied' | 'unconfigured' | ''
+    const note =
+      reason === 'denied'
+        ? '<p class="gate-error">That Google account isn’t on the access list. Ask the admin to add you.</p>'
+        : reason === 'unconfigured'
+          ? '<p class="gate-error">Google sign-in isn’t configured on this server yet.</p>'
+          : '';
+    const google = state.auth?.googleConfigured
+      ? `<a class="primary-button gate-btn google-btn" href="/auth/google"><span class="g-mark">G</span> Sign in with Google</a>`
+      : '<p class="gate-hint">Set <code>GOOGLE_CLIENT_ID</code> / <code>GOOGLE_CLIENT_SECRET</code> on the server to enable sign-in.</p>';
+    const dev = state.auth?.devLoginEnabled
+      ? `<div class="gate-dev">
+           <input id="devEmail" type="email" placeholder="allowlisted email (dev login)" autocomplete="off" />
+           <button class="gate-link" data-gate="devlogin">Dev sign in →</button>
+         </div>`
+      : '';
+    body = `${mark}<h2>Learning Tracker</h2>
+      <p>Sign in to track your progress. Access is invite-only — your email must be added by an admin.</p>
+      ${note}${google}${dev}`;
+  } else if (kind === 'scanning') {
     body = `${mark}<h2>Loading your library…</h2>
       <p>Reading <strong>${escapeHtml(name || state.rootName || 'the courses folder')}</strong> on the server.</p>
       <div class="gate-spinner"></div>`;
@@ -592,13 +548,11 @@ function showGate(kind, name = '') {
     body = `${mark}<h2>No courses found</h2>
       <p>The server didn't find any video, audio or PDF files in <strong>${escapeHtml(name)}</strong>.</p>
       <p class="gate-hint">Add your course folders to the server's courses directory (or start it with <code>COURSES_DIR=/path/to/courses</code>), then rescan.</p>
-      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-refresh"></span> Rescan</button>
-      <button class="gate-link" data-gate="demo">or explore a demo →</button>`;
+      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-refresh"></span> Rescan</button>`;
   } else {
     body = `${mark}<h2>Couldn't load the library</h2>
       <p>The app couldn't reach the server to list <strong>${escapeHtml(name)}</strong>. Check that the server is running, then retry.</p>
-      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-refresh"></span> Retry</button>
-      <button class="gate-link" data-gate="demo">or explore a demo →</button>`;
+      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-refresh"></span> Retry</button>`;
   }
   el.gateCard.innerHTML = body;
 }
@@ -631,7 +585,6 @@ function bindEvents() {
   });
 
   el.refreshButton.addEventListener('click', async () => {
-    if (state.rootName === 'Demo Library') { toast('Demo library — nothing to rescan', 'info'); return; }
     el.refreshButton.disabled = true;
     el.refreshButton.classList.add('spinning');
     await loadServerLibrary(true);
@@ -710,13 +663,7 @@ function bindEvents() {
     saveProgress('ended', { renderList: true });
     updatePlayerControls();
     showControls();
-    // When a quiz is available and auto-quiz is on, run the quiz instead of
-    // auto-advancing; otherwise advance to the next lesson as before.
-    if (quizAvailableFor(state.selectedVideo) && localStorage.getItem('lt:auto-quiz') !== '0') {
-      window.setTimeout(() => startQuiz(true), 400);
-    } else {
-      window.setTimeout(() => playAdjacent(1, true), 350);
-    }
+    window.setTimeout(() => playAdjacent(1, true), 350);
   });
   el.player.addEventListener('seeking', () => { state.isSeeking = true; });
   el.player.addEventListener('seeked',  () => { state.isSeeking = false; saveProgress('seeked', { renderList: true }); updatePlayerControls(); });
@@ -807,11 +754,11 @@ function bindEvents() {
   el.shortcutsClose.addEventListener('click', closeShortcuts);
   el.shortcutsModal.addEventListener('click', (e) => { if (e.target === el.shortcutsModal) closeShortcuts(); });
 
-  // Library gate (rescan / demo)
+  // Library/sign-in gate
   el.gate.addEventListener('click', (e) => {
     const action = e.target.closest('[data-gate]')?.dataset.gate;
     if (action === 'pick') pickFolder();
-    else if (action === 'demo') loadDemo();
+    else if (action === 'devlogin') devLogin();
   });
 
   // Reset progress
@@ -863,30 +810,17 @@ function bindEvents() {
   });
   el.reviewModal.addEventListener('click', (e) => { if (e.target === el.reviewModal) endReview(); });
 
-  // Settings (AI)
-  el.settingsButton.addEventListener('click', openSettings);
-  el.settingsClose.addEventListener('click', () => { el.settingsModal.hidden = true; });
-  el.settingsModal.addEventListener('click', (e) => { if (e.target === el.settingsModal) el.settingsModal.hidden = true; });
-  el.aiProvider.addEventListener('change', syncSettingsProvider);
-  el.aiKeyShow.addEventListener('click', () => {
-    const showing = el.aiKey.type === 'text';
-    el.aiKey.type = showing ? 'password' : 'text';
-    el.aiKeyShow.querySelector('.icon').className = `icon icon-${showing ? 'eye' : 'eye-off'}`;
-  });
-  el.settingsSave.addEventListener('click', saveSettings);
-  el.exportBtn.addEventListener('click', exportData);
-  el.importBtn.addEventListener('click', () => el.importFile.click());
-  el.importFile.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) importData(f); e.target.value = ''; });
-
-  // Quiz
-  el.quizButton.addEventListener('click', startQuiz);
-  el.quizClose.addEventListener('click', endQuiz);
-  el.quizModal.addEventListener('click', (e) => { if (e.target === el.quizModal) endQuiz(); });
-  el.quizBody.addEventListener('click', (e) => {
-    const opt = e.target.closest('.quiz-opt');
-    if (opt && !opt.disabled) { answerQuiz(Number(opt.dataset.opt)); return; }
-    if (e.target.closest('#quizNext')) nextQuiz();
-  });
+  // Account & admin
+  el.userButton.addEventListener('click', openAccount);
+  el.settingsClose.addEventListener('click', closeAccount);
+  el.settingsModal.addEventListener('click', (e) => { if (e.target === el.settingsModal) closeAccount(); });
+  el.signOutBtn.addEventListener('click', signOut);
+  el.adminOpenBtn.addEventListener('click', openAdmin);
+  el.adminClose.addEventListener('click', closeAdmin);
+  el.adminModal.addEventListener('click', (e) => { if (e.target === el.adminModal) closeAdmin(); });
+  el.adminAddBtn.addEventListener('click', addAllowedUser);
+  el.adminAddEmail.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAllowedUser(); } });
+  el.adminUserList.addEventListener('click', onAdminListClick);
 
   // Dashboard
   el.homeButton.addEventListener('click', showDashboard);
@@ -961,13 +895,12 @@ function handleKeydown(e) {
     return;
   }
 
-  if (!el.quizModal.hidden && e.key === 'Escape') { endQuiz(); return; }
-
   if (e.key === 'Escape') {
     if (!el.confirmModal.hidden) el.confirmCancel.click();
     if (!el.shortcutsModal.hidden) closeShortcuts();
     if (!el.goalModal.hidden) el.goalModal.hidden = true;
-    if (!el.settingsModal.hidden) el.settingsModal.hidden = true;
+    if (el.adminModal && !el.adminModal.hidden) closeAdmin();
+    else if (!el.settingsModal.hidden) closeAccount();
     return;
   }
   if (e.key === '?') { e.preventDefault(); openShortcuts(); return; }
@@ -1921,13 +1854,11 @@ function loadTranscript(video) {
   const has = Boolean(video.hasTranscript) && video.kind !== 'pdf';
   el.transcriptToggle.hidden = !has;
   el.ccButton.hidden = !(has && video.kind === 'video');
-  el.quizButton.hidden = video.kind === 'pdf' ? true : !(has || state.rootName === 'Demo Library');
   renderTranscript();
   if (!has) { if (!el.transcriptDrawer.hidden) el.transcriptDrawer.hidden = true; return; }
 
   const token = (state.transcriptToken = state.transcriptToken + 1);
-  (video._subUrl ? fetch(video._subUrl).then((r) => r.text())
-                 : video._subHandle.getFile().then((file) => file.text()))
+  fetch(video._subUrl).then((r) => r.text())
     .then((text) => {
       if (token !== state.transcriptToken || state.selectedVideo?.id !== video.id) return;
       state.transcript = parseSubtitles(text);
@@ -2213,322 +2144,96 @@ function renderFlashcards() {
 }
 
 // ── AI config & calls ─────────────────────────────────────────────────────────
-function aiConfig() {
-  return {
-    provider: localStorage.getItem('lt:ai-provider') || 'gemini',
-    key: localStorage.getItem('lt:ai-key') || '',
-    model: localStorage.getItem('lt:ai-model') || ''
-  };
-}
-function defaultModel(provider) {
-  return provider === 'openai' ? 'gpt-4o-mini' : provider === 'anthropic' ? 'claude-3-5-haiku-latest' : 'gemini-2.0-flash';
-}
-async function aiError(res) {
-  let detail = '';
-  try { const j = await res.json(); detail = j.error?.message || j.error?.type || JSON.stringify(j).slice(0, 180); }
-  catch { try { detail = (await res.text()).slice(0, 180); } catch {} }
-  return new Error(`HTTP ${res.status}${detail ? ` — ${detail}` : ''}`);
-}
-async function callAI(prompt) {
-  const { provider, key } = aiConfig();
-  const model = aiConfig().model || defaultModel(provider);
-  if (!key) throw new Error('no-key');
-  let res;
-  try {
-    if (provider === 'gemini') {
-      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.4 } })
-      });
-      if (!res.ok) throw await aiError(res);
-      const d = await res.json();
-      if (d.promptFeedback?.blockReason) throw new Error(`Blocked by safety filter (${d.promptFeedback.blockReason})`);
-      return (d.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
-    }
-    if (provider === 'openai') {
-      res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        body: JSON.stringify({ model, temperature: 0.4, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
-      });
-      if (!res.ok) throw await aiError(res);
-      const d = await res.json();
-      return d.choices?.[0]?.message?.content || '';
-    }
-    if (provider === 'anthropic') {
-      res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model, max_tokens: 1600, messages: [{ role: 'user', content: prompt }] })
-      });
-      if (!res.ok) throw await aiError(res);
-      const d = await res.json();
-      return (d.content || []).map((c) => c.text || '').join('');
-    }
-  } catch (e) {
-    // fetch() throws a TypeError for network/CORS failures.
-    if (e instanceof TypeError) throw new Error('Network or CORS error — the request could not reach the provider.');
-    throw e;
+// ── Account ───────────────────────────────────────────────────────────────────
+function openAccount() {
+  const u = state.user;
+  if (!u) return;
+  if (el.accountName) el.accountName.textContent = u.name || u.email || 'Signed in';
+  if (el.accountEmail) el.accountEmail.textContent = u.email || '';
+  if (el.accountRole) {
+    el.accountRole.textContent = u.role === 'admin' ? 'Admin' : 'Member';
+    el.accountRole.className = `account-role ${u.role}`;
   }
-  throw new Error('bad-provider');
-}
-function parseQuizJson(text) {
-  let t = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-  let data = null;
-  try { data = JSON.parse(t); } catch {
-    const m = t.match(/[[{][\s\S]*[}\]]/);
-    if (m) { try { data = JSON.parse(m[0]); } catch {} }
+  if (el.accountAvatar) {
+    const initial = (u.name || u.email || '?').trim().charAt(0).toUpperCase();
+    if (u.picture) { el.accountAvatar.style.backgroundImage = `url("${u.picture}")`; el.accountAvatar.textContent = ''; }
+    else { el.accountAvatar.style.backgroundImage = ''; el.accountAvatar.textContent = initial; }
   }
-  if (!data) return [];
-  const arr = Array.isArray(data) ? data : (data.questions || data.quiz || []);
-  return arr
-    .filter((q) => q && q.question && Array.isArray(q.options) && q.options.length >= 2 && Number.isInteger(q.answer))
-    .map((q) => ({
-      question: String(q.question),
-      options: q.options.map(String).slice(0, 6),
-      answer: Math.max(0, Math.min(q.options.length - 1, q.answer)),
-      explanation: q.explanation ? String(q.explanation) : ''
-    }))
-    .slice(0, 10);
-}
-const DEMO_QUIZ = [
-  { question: 'What does it mean for an operation to be idempotent?', options: ['It can only ever run once', 'Applying it many times has the same effect as applying it once', 'It always fails when retried', 'It must talk to a database'], answer: 1, explanation: 'Idempotent operations give the same result whether applied once or many times.' },
-  { question: 'Why is idempotency valuable for reliable systems?', options: ['It makes code shorter', 'It makes retries safe — no duplicate side effects', 'It removes the need for testing', 'It speeds up the network'], answer: 1, explanation: 'Safe retries matter when a request can fail and be sent again.' },
-  { question: 'What characterises a declarative approach?', options: ['You write step-by-step instructions', 'You describe the desired state and let the tool reconcile it', 'You must use a graphical interface', 'It cannot be automated'], answer: 1, explanation: 'Declarative = describe the end state; the tool figures out how to reach it.' }
-];
-
-async function generateQuiz(video, n = 5, force = false) {
-  // The demo library always uses a built-in quiz so it works offline / without a key.
-  if (state.rootName === 'Demo Library') return DEMO_QUIZ.slice(0, n);
-  // Reuse a previously generated quiz for this lesson — avoids re-spending quota.
-  if (!force) {
-    const cached = await db.getQuiz(video.id).catch(() => null);
-    if (cached?.questions?.length) return cached.questions;
-  }
-  if (!aiConfig().key) throw new Error('no-key');
-  let source = (state.transcript || []).map((c) => c.text).join(' ').trim();
-  if (!source && state.notes.length) source = state.notes.map((nn) => nn.text).filter(Boolean).join('. ');
-  if (!source) throw new Error('no-source');
-  source = source.slice(0, 6000);
-  const prompt = `You are a quiz generator for a learning app. Using ONLY the lesson content below, write ${n} multiple-choice questions that test understanding of the key ideas. Each question must have exactly 4 options with exactly one correct answer. Respond with ONLY minified JSON (no markdown) in this shape: {"questions":[{"question":"...","options":["a","b","c","d"],"answer":0,"explanation":"short reason"}]} where "answer" is the 0-based index of the correct option.\n\nLesson title: ${video.title}\nContent:\n"""${source}"""`;
-  const text = await callAI(prompt);
-  const qs = parseQuizJson(text);
-  if (!qs.length) throw new Error('parse');
-  db.saveQuiz(video.id, qs).catch(() => {});
-  return qs;
-}
-
-// ── Quiz session ──────────────────────────────────────────────────────────────
-function quizAvailableFor(v) {
-  if (!v || v.kind === 'pdf') return false;
-  if (state.rootName === 'Demo Library') return true;
-  return Boolean(v.hasTranscript) && Boolean(aiConfig().key);
-}
-async function startQuiz(auto = false, force = false) {
-  const v = state.selectedVideo;
-  if (!v || v.kind === 'pdf') return;
-  el.quizModal.hidden = false;
-  el.quizProgress.textContent = 'Quiz';
-  el.quizBody.innerHTML = `<div class="quiz-loading"><div class="gate-spinner"></div><p>${force ? 'Generating a new quiz…' : 'Preparing your quiz…'}</p></div>`;
-  try {
-    const questions = await generateQuiz(v, 5, force);
-    state.quiz = { video: v, questions, index: 0, answers: [], correct: 0, auto };
-    renderQuizQuestion();
-  } catch (e) {
-    if (auto) {
-      // Don't interrupt an auto-trigger with an error modal — close and continue.
-      el.quizModal.hidden = true;
-      state.quiz = null;
-      if (e.message !== 'no-source') toast(`Quiz unavailable · ${e.message.slice(0, 70)}`, 'warn', 4500);
-      window.setTimeout(() => playAdjacent(1, true), 250);
-      return;
-    }
-    renderQuizError(e.message);
-  }
-}
-function renderQuizError(code) {
-  if (code === 'no-key') {
-    el.quizBody.innerHTML = `<div class="quiz-msg"><span class="icon icon-wand"></span><h3>Add an AI key to generate quizzes</h3><p>Quizzes are written by an AI model from the lesson transcript, using your own key — stored only in this browser.</p><button class="primary-button" id="quizOpenSettings">Open AI settings</button><p class="quiz-hint">Tip: Google Gemini has a free tier — no credit card needed.</p></div>`;
-    document.querySelector('#quizOpenSettings')?.addEventListener('click', () => { endQuiz(); openSettings(); });
-  } else if (code === 'no-source') {
-    el.quizBody.innerHTML = `<div class="quiz-msg"><h3>No transcript for this lesson</h3><p>AI quizzes read the lesson's transcript (a <b>.srt</b>/<b>.vtt</b> file next to the video) or your notes. Add one to enable quizzes here.</p><button class="primary-button" id="quizCloseMsg">Close</button></div>`;
-    document.querySelector('#quizCloseMsg')?.addEventListener('click', endQuiz);
-  } else if (code === 'parse') {
-    el.quizBody.innerHTML = `<div class="quiz-msg"><h3>Couldn't read the quiz</h3><p>The AI replied but the response wasn't valid quiz JSON. This is usually transient — try again, or switch model in Settings.</p><div class="quiz-result-actions" style="justify-content:center"><button class="pill-button" id="quizOpenSettings2">Settings</button><button class="primary-button" id="quizRetry">Retry</button></div></div>`;
-    document.querySelector('#quizRetry')?.addEventListener('click', () => startQuiz());
-    document.querySelector('#quizOpenSettings2')?.addEventListener('click', () => { endQuiz(); openSettings(); });
-  } else {
-    const net = /network or cors/i.test(code);
-    const quota = /\b429\b|quota|rate limit|resource_exhausted/i.test(code);
-    let title = "Couldn't generate a quiz";
-    let hint = 'Check your provider, API key and model name in Settings, then retry.';
-    if (quota) {
-      title = 'AI rate limit reached';
-      hint = 'Your key works — you’ve just hit the provider’s rate or daily limit. Wait a minute and retry. (Generated quizzes are cached per lesson, so you won’t re-spend on this one.) For higher free limits, try the model <b>gemini-2.0-flash-lite</b> in Settings.';
-    } else if (net) {
-      hint = 'The request couldn’t reach the provider — check your connection. Some providers block direct browser calls.';
-    }
-    el.quizBody.innerHTML = `<div class="quiz-msg"><h3>${title}</h3><p>${escapeHtml(code)}</p><p class="quiz-hint">${hint}</p><div class="quiz-result-actions" style="justify-content:center"><button class="pill-button" id="quizOpenSettings2">Open settings</button><button class="primary-button" id="quizRetry">Retry</button></div></div>`;
-    document.querySelector('#quizRetry')?.addEventListener('click', () => startQuiz());
-    document.querySelector('#quizOpenSettings2')?.addEventListener('click', () => { endQuiz(); openSettings(); });
-  }
-}
-function renderQuizQuestion() {
-  const q = state.quiz;
-  if (!q) return;
-  if (q.index >= q.questions.length) { showQuizResults(); return; }
-  const item = q.questions[q.index];
-  el.quizProgress.textContent = `Question ${q.index + 1} / ${q.questions.length}`;
-  el.quizBody.innerHTML = `
-    <div class="quiz-q">${escapeHtml(item.question)}</div>
-    <div class="quiz-options">
-      ${item.options.map((o, i) => `<button class="quiz-opt" data-opt="${i}">${escapeHtml(o)}</button>`).join('')}
-    </div>
-    <div class="quiz-feedback" id="quizFeedback" hidden></div>
-    <button class="primary-button quiz-next" id="quizNext" hidden>${q.index + 1 < q.questions.length ? 'Next question' : 'See results'}</button>`;
-}
-function answerQuiz(optIndex) {
-  const q = state.quiz;
-  if (!q || q.answers[q.index] != null) return;
-  const item = q.questions[q.index];
-  q.answers[q.index] = optIndex;
-  const correct = optIndex === item.answer;
-  if (correct) q.correct++;
-  el.quizBody.querySelectorAll('.quiz-opt').forEach((b, i) => {
-    b.disabled = true;
-    if (i === item.answer) b.classList.add('correct');
-    else if (i === optIndex) b.classList.add('wrong');
-  });
-  const fb = document.querySelector('#quizFeedback');
-  fb.hidden = false;
-  fb.className = `quiz-feedback ${correct ? 'good' : 'bad'}`;
-  fb.innerHTML = `<strong>${correct ? 'Correct' : 'Not quite'}</strong>${item.explanation ? ` · ${escapeHtml(item.explanation)}` : ''}`;
-  const next = document.querySelector('#quizNext');
-  next.hidden = false;
-  next.focus();
-}
-function nextQuiz() { if (state.quiz) { state.quiz.index++; renderQuizQuestion(); } }
-function showQuizResults() {
-  const q = state.quiz;
-  const pct = Math.round((q.correct / q.questions.length) * 100);
-  el.quizProgress.textContent = 'Results';
-  el.quizBody.innerHTML = `
-    <div class="quiz-result">
-      <div class="quiz-score ${pct >= 70 ? 'good' : pct >= 40 ? 'mid' : 'low'}">${q.correct} / ${q.questions.length}</div>
-      <p>${pct >= 70 ? 'Great recall! 🎉' : pct >= 40 ? 'Good effort — revisit the ones you missed.' : 'Worth another pass through this lesson.'}</p>
-      <div class="quiz-result-actions">
-        <button class="pill-button" id="quizRegen"><span class="icon icon-rotate-cw"></span> New quiz</button>
-        <button class="pill-button" id="quizSaveCards"><span class="icon icon-layers"></span> Save as flashcards</button>
-        <button class="primary-button" id="quizDone">Done</button>
-      </div>
-    </div>`;
-  document.querySelector('#quizDone').addEventListener('click', endQuiz);
-  document.querySelector('#quizSaveCards').addEventListener('click', saveQuizAsCards);
-  document.querySelector('#quizRegen').addEventListener('click', () => startQuiz(false, true));
-}
-function saveQuizAsCards() {
-  const q = state.quiz;
-  if (!q) return;
-  const v = q.video;
-  let added = 0;
-  for (const item of q.questions) {
-    const card = {
-      id: `c_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}_${added}`,
-      videoId: v.id, courseId: v.hierarchy[0], lessonTitle: v.title,
-      front: item.question, back: item.options[item.answer] + (item.explanation ? ` — ${item.explanation}` : ''),
-      t: null, createdAt: new Date().toISOString(),
-      srs: { interval: 0, ease: 2.5, reps: 0, lapses: 0, due: localDay(new Date()) }
-    };
-    db.saveCard(card).catch(() => {});
-    state.allCards.push(card);
-    if (state.selectedVideo?.id === v.id) state.cards.push(card);
-    added++;
-  }
-  updateCardsBadge();
-  if (!el.cardsDrawer.hidden) renderCards();
-  const btn = document.querySelector('#quizSaveCards');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="icon icon-circle-check"></span> Saved'; }
-  toast(`${added} flashcard${added === 1 ? '' : 's'} added`, 'success');
-}
-function endQuiz() {
-  el.quizModal.hidden = true;
-  state.quiz = null;
-}
-
-// ── Settings (AI) ─────────────────────────────────────────────────────────────
-const KEY_HINTS = {
-  gemini: 'Free key at <b>aistudio.google.com</b> — no credit card needed.',
-  openai: 'Key at <b>platform.openai.com</b> (paid, pay-as-you-go).',
-  anthropic: 'Key at <b>console.anthropic.com</b> (paid, pay-as-you-go).'
-};
-function openSettings() {
-  const cfg = aiConfig();
-  el.aiProvider.value = cfg.provider;
-  el.aiKey.value = cfg.key;
-  el.aiModel.value = cfg.model;
-  el.autoQuizToggle.checked = localStorage.getItem('lt:auto-quiz') !== '0';
-  syncSettingsProvider();
+  if (el.adminOpenBtn) el.adminOpenBtn.hidden = u.role !== 'admin';
   el.settingsModal.hidden = false;
 }
-function syncSettingsProvider() {
-  const p = el.aiProvider.value;
-  el.aiKeyHint.innerHTML = KEY_HINTS[p] || '';
-  el.aiModel.placeholder = `default: ${defaultModel(p)}`;
-}
-function saveSettings() {
-  localStorage.setItem('lt:ai-provider', el.aiProvider.value);
-  localStorage.setItem('lt:ai-key', el.aiKey.value.trim());
-  localStorage.setItem('lt:ai-model', el.aiModel.value.trim());
-  localStorage.setItem('lt:auto-quiz', el.autoQuizToggle.checked ? '1' : '0');
+function closeAccount() { el.settingsModal.hidden = true; }
+
+// ── Admin: manage the allowlist ────────────────────────────────────────────────
+async function openAdmin() {
+  if (state.user?.role !== 'admin') return;
   el.settingsModal.hidden = true;
-  toast('Settings saved', 'success');
+  el.adminModal.hidden = false;
+  if (el.adminHint) el.adminHint.textContent = '';
+  el.adminUserList.innerHTML = '<div class="admin-loading"><div class="gate-spinner"></div></div>';
+  await renderAdminUsers();
+}
+function closeAdmin() { el.adminModal.hidden = true; }
+
+async function renderAdminUsers() {
+  let users;
+  try { users = await db.adminListUsers(); }
+  catch (e) { el.adminUserList.innerHTML = `<div class="admin-empty">Couldn’t load users · ${escapeHtml(e.message)}</div>`; return; }
+  if (!users.length) { el.adminUserList.innerHTML = '<div class="admin-empty">No users yet.</div>'; return; }
+  const meId = state.user?.id;
+  el.adminUserList.innerHTML = users.map((u) => {
+    const self = u.id === meId;
+    const last = u.lastLoginAt ? fmtShortDate(new Date(u.lastLoginAt)) : 'never';
+    const actions = self ? '<span class="admin-user-meta">(that’s you)</span>' : `
+      <button class="admin-act" data-admin-role="${u.id}" data-role="${u.role === 'admin' ? 'user' : 'admin'}">${u.role === 'admin' ? 'Make member' : 'Make admin'}</button>
+      <button class="admin-act" data-admin-status="${u.id}" data-status="${u.status === 'disabled' ? 'allowed' : 'disabled'}">${u.status === 'disabled' ? 'Enable' : 'Disable'}</button>
+      <button class="admin-act danger" data-admin-del="${u.id}">Remove</button>`;
+    return `
+      <div class="admin-user ${u.status === 'disabled' ? 'is-disabled' : ''}">
+        <div class="admin-user-main">
+          <span class="admin-user-email">${escapeHtml(u.email)}</span>
+          <span class="admin-user-meta">${u.role === 'admin' ? 'Admin' : 'Member'} · ${escapeHtml(u.status)} · last seen ${escapeHtml(last)}</span>
+        </div>
+        <div class="admin-user-actions">${actions}</div>
+      </div>`;
+  }).join('');
 }
 
-// ── Backup & restore ──────────────────────────────────────────────────────────
-const BACKUP_STORES = ['progress', 'durations', 'activity', 'goals', 'achievements', 'notes', 'cards', 'quizzes'];
-async function exportData() {
-  const data = {};
-  for (const s of BACKUP_STORES) {
-    const entries = await idbEntries(s);
-    data[s] = entries.map(({ key, value }) => ({ k: key, v: value }));
-  }
-  // Carry over preferences but never the API key (keep secrets out of backups).
-  const settings = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && k.startsWith('lt:') && k !== 'lt:ai-key' && k !== 'lt:sidebar-collapsed') settings[k] = localStorage.getItem(k);
-  }
-  const payload = { app: 'learning-tracker', version: 1, exportedAt: new Date().toISOString(), data, settings };
-  downloadText(`learning-tracker-backup-${localDay(new Date())}.json`, JSON.stringify(payload, null, 2), 'application/json');
-  const totalItems = BACKUP_STORES.reduce((n, s) => n + data[s].length, 0);
-  toast(`Backup downloaded · ${totalItems} items`, 'success');
+async function addAllowedUser() {
+  const email = (el.adminAddEmail.value || '').trim().toLowerCase();
+  const role = el.adminAddRole?.value || 'user';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { el.adminHint.textContent = 'Enter a valid email address.'; return; }
+  el.adminAddBtn.disabled = true;
+  try {
+    await db.adminAddUser(email, role);
+    el.adminAddEmail.value = '';
+    el.adminHint.textContent = '';
+    await renderAdminUsers();
+    toast(`Added ${email}`, 'success');
+  } catch (e) { el.adminHint.textContent = e.message; }
+  finally { el.adminAddBtn.disabled = false; }
 }
 
-async function importData(file) {
-  let payload;
-  try { payload = JSON.parse(await file.text()); } catch { toast('That file isn’t valid JSON', 'warn'); return; }
-  if (payload.app !== 'learning-tracker' || !payload.data) { toast('Not a Learning Tracker backup', 'warn'); return; }
-  const counts = BACKUP_STORES
-    .map((s) => [(payload.data[s] || []).length, s])
-    .filter(([n]) => n > 0)
-    .map(([n, s]) => `${n} ${s}`)
-    .join(', ') || 'no items';
-  const ok = await confirmDialog({
-    title: 'Restore from backup?',
-    body: `This <strong>replaces</strong> your current progress, notes, cards, goals and stats with the backup (${escapeHtml(counts)}). Your course files aren’t affected.`,
-    okLabel: 'Restore'
-  });
-  if (!ok) return;
-  for (const s of BACKUP_STORES) {
-    await idbClear(s);
-    for (const { k, v } of (payload.data[s] || [])) await idbPut(s, k, v);
-  }
-  if (payload.settings) {
-    for (const [k, val] of Object.entries(payload.settings)) {
-      if (typeof k === 'string' && k.startsWith('lt:') && k !== 'lt:ai-key') localStorage.setItem(k, val);
+async function onAdminListClick(e) {
+  const roleBtn = e.target.closest('[data-admin-role]');
+  const statusBtn = e.target.closest('[data-admin-status]');
+  const delBtn = e.target.closest('[data-admin-del]');
+  try {
+    if (roleBtn) {
+      await db.adminUpdateUser(roleBtn.dataset.adminRole, { role: roleBtn.dataset.role });
+      await renderAdminUsers();
+    } else if (statusBtn) {
+      await db.adminUpdateUser(statusBtn.dataset.adminStatus, { status: statusBtn.dataset.status });
+      await renderAdminUsers();
+    } else if (delBtn) {
+      const ok = await confirmDialog({
+        title: 'Remove this person?',
+        body: 'They’ll lose access immediately and their saved progress will be deleted. This can’t be undone.',
+        okLabel: 'Remove'
+      });
+      if (ok) { await db.adminDeleteUser(delBtn.dataset.adminDel); await renderAdminUsers(); toast('User removed', 'info'); }
     }
-  }
-  toast('Backup restored — reloading…', 'success');
-  setTimeout(() => location.reload(), 900);
+  } catch (err) { toast(err.message, 'warn'); }
 }
 
 function expandVideoPath(video) {
@@ -2703,11 +2408,6 @@ function saveProgress(event, options = {}) {
     renderHero();
     evaluateAchievements();
     toast(`Completed · ${video.title}`, 'success', 3500);
-    // If the user finished by reaching the end, the 'ended' handler offers the quiz.
-    // If they completed early (e.g. scrubbed to ~end), offer a tappable quiz instead.
-    if (event !== 'ended' && quizAvailableFor(video) && localStorage.getItem('lt:auto-quiz') !== '0') {
-      toast('Quiz yourself on this lesson 🎓', 'info', 6000, () => startQuiz());
-    }
   }
 
   renderVideoStats();
@@ -2788,18 +2488,6 @@ function formatClock(seconds) {
   const sec = s % 60;
   return h ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`;
 }
-
-async function api(path, options = {}) {
-  const res = await fetch(path, {
-    method:  options.method || 'GET',
-    headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
-    body:    options.body ? JSON.stringify(options.body) : undefined
-  });
-  if (!res.ok) throw new Error((await res.text()) || res.statusText);
-  return res.json();
-}
-
-function delay(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
 function escapeHtml(value) {
   return String(value)
