@@ -1630,13 +1630,16 @@ function refreshDurationsUI() {
   if (state.selectedVideo) updatePlayerControls();
 }
 
-function renderCurriculum() {
+// `scrollToActive` is opt-in so that expanding/collapsing a course, filtering,
+// or searching doesn't yank the list back to the currently-playing lesson — we
+// only auto-scroll when a lesson is actually selected.
+function renderCurriculum(scrollToActive = false) {
   recomputeAggregates();
   const hasCourses = (state.library?.courses?.length ?? 0) > 0;
   const html = (state.library?.courses ?? []).map((c) => renderNode(c, 0, false)).filter(Boolean).join('');
   if (html) {
     el.courseList.innerHTML = html;
-    scrollActiveLessonIntoView();
+    if (scrollToActive) scrollActiveLessonIntoView();
     return;
   }
   el.courseList.innerHTML = hasCourses
@@ -1773,7 +1776,7 @@ function selectVideo(video, options = {}) {
     state.pendingResume = resumePoint(video);
   }
 
-  renderCurriculum();
+  renderCurriculum(true);   // selecting a lesson scrolls it into view
   renderNowPlaying();
   updatePlayerControls();
 
