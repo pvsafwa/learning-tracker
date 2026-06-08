@@ -1,36 +1,65 @@
 # Learning Tracker
 
-A local-first web app for tracking progress through your course videos, audio lessons, and PDFs.
+A self-hosted web app for tracking progress through your course videos, audio lessons, and PDFs.
 
-It runs as a tiny static web app. The **browser** reads a folder you pick on your own computer (via the File System Access API) and plays the files locally — nothing is uploaded. All your progress, goals, streaks, and achievements are stored in your browser (IndexedDB). This means you can host it anywhere (e.g. AWS) and each visitor uses **their own** local course folders.
+The **server** holds your course folders and streams each file to the browser; the **browser** plays them and keeps your progress, goals, streaks, notes, and flashcards in local storage (IndexedDB). Run it on any machine that can reach your media — a home server, a NAS, an Ubuntu box on your LAN, AWS — and open the URL from anywhere on the network.
 
-## Browser support
+Because the files are served by the app itself (not read from the visitor's own disk), **it works over plain HTTP** — no HTTPS and no special browser required. It runs in any modern browser.
 
-Requires a **Chromium-based browser**: Chrome, Edge, Arc, or Brave. Safari and Firefox don't support the File System Access API and will show an "unsupported browser" message.
+## Quick start
 
-## Run locally
+1. Put your course folders inside the `courses/` directory next to `server.mjs` (or point somewhere else with `COURSES_DIR`, see below).
+2. Start the server:
+   ```sh
+   node server.mjs
+   ```
+3. Open `http://<server-ip>:4173` (or `http://localhost:4173` on the same machine).
+
+Each top-level folder under the courses directory becomes a course; nested subfolders form an expandable tree. Drop a `.srt`/`.vtt` next to a video (same name) to get captions + a searchable transcript.
+
+## Configuration
+
+| Variable      | Default     | Purpose                                                                      |
+| ------------- | ----------- | --------------------------------------------------------------------------- |
+| `COURSES_DIR` | `./courses` | Folder that holds your course folders. Absolute or relative to `server.mjs`. |
+| `PORT`        | `4173`      | Port to listen on.                                                          |
+| `HOST`        | `0.0.0.0`   | Bind address (default: all interfaces).                                     |
+
+Example — point at courses elsewhere on the box and use a different port:
 
 ```sh
-node server.mjs
+COURSES_DIR=/home/me/Videos/Courses PORT=8080 node server.mjs
 ```
 
-Then open `http://localhost:4173`. (`localhost` counts as a secure context, so the folder picker works.)
+Supported media: video (`.mp4`, `.mkv`, `.mov`, `.webm`, …), audio (`.mp3`, `.m4a`, `.flac`, …), and `.pdf`. Files stream with HTTP range support, so seeking and resume work.
 
-## Deploy (e.g. AWS)
+### Run it as a background service (Ubuntu / systemd)
 
-The server is just a static file host — it serves the contents of `public/`. You can run `node server.mjs` behind anything that terminates **HTTPS** (an ALB, CloudFront, nginx, Caddy…), or upload `public/` to any static host (S3 + CloudFront, etc.).
+```ini
+# /etc/systemd/system/learning-tracker.service
+[Unit]
+Description=Learning Tracker
+After=network.target
 
-- **HTTPS is required.** The File System Access API only works in a secure context (HTTPS or `localhost`).
-- Configure the port with `PORT` (default `4173`) and bind host with `HOST` (default `0.0.0.0`).
+[Service]
+WorkingDirectory=/opt/learning-tracker
+Environment=COURSES_DIR=/srv/courses
+Environment=PORT=4173
+ExecStart=/usr/bin/node server.mjs
+Restart=on-failure
 
-## How it works for a user
+[Install]
+WantedBy=multi-user.target
+```
 
-1. Open the app and click **Choose courses folder**.
-2. Pick the folder that contains your course folders. The browser asks permission once.
-3. Each subfolder becomes a course; nested subfolders form an expandable tree. Files placed directly in the chosen folder are grouped under that folder's name.
-4. Your browser remembers the folder. On a later visit it may ask you to **reconnect** it (a browser security measure) — one click and you're back.
+```sh
+sudo systemctl enable --now learning-tracker
+```
 
-Supported media: video (`.mp4`, `.mkv`, `.mov`, `.webm`, …), audio (`.mp3`, `.m4a`, `.flac`, …), and `.pdf`.
+## How the data works
+
+- **Your media** is read only by the server and streamed over HTTP; it is never copied into the app or uploaded anywhere else.
+- **Your progress** (watch position, completion, durations, activity, notes, flashcards, goals, achievements) lives in **your browser's** IndexedDB. It is per browser/device — there's no account or central database, so two people using the same server each keep their own tracking. Use **Backup & restore** (Settings) to move your data between browsers/devices.
 
 ## Features
 
@@ -40,19 +69,17 @@ Supported media: video (`.mp4`, `.mkv`, `.mov`, `.webm`, …), audio (`.mp3`, `.
   - **Timestamped notes & bookmarks** — capture at the current moment, click to jump back, export to Markdown.
   - **Captions & transcript** — drop a `.srt`/`.vtt` next to a video; get on-screen captions plus a searchable, click-to-seek transcript.
   - **Flashcards + spaced repetition** — make Q&A cards (SM-2 scheduling) and review what's due, right on the dashboard.
-  - **AI quizzes** — generate an end-of-lesson multiple-choice quiz from the transcript using your own API key (Google **Gemini** has a free tier; OpenAI and Anthropic also supported). Set it up in **Settings**; quiz questions can be saved as flashcards.
+  - **AI quizzes** — generate an end-of-lesson multiple-choice quiz from the transcript using your own API key (Google **Gemini** has a free tier; OpenAI and Anthropic also supported). Set it up in **Settings**; quizzes are cached per lesson and can be saved as flashcards.
 - **Backup & restore** — export all your data to a JSON file and import it on another device (Settings → Backup & restore).
 - Search, filter (in progress / completed / not started), light & dark themes, keyboard shortcuts, Picture-in-Picture, and per-lesson / per-course / all progress reset.
-- A built-in **demo library** ("explore a demo" on the welcome screen) to try the app without picking a folder.
+- A built-in **demo library** ("explore a demo") to try the app without any media on the server.
 
 ## Keyboard shortcuts
 
 `Space` play/pause · `←/→` seek 10s · `↑/↓` volume · `M` mute · `C` captions · `B` bookmark · `F` fullscreen · `N`/`P` next/previous · `[` toggle sidebar · `?` shortcuts. In a quiz/review: `Space` to reveal, `1–4` to grade.
 
-## Data & privacy
+## Privacy
 
-Everything stays on your device:
-
-- Your media files are read locally and never uploaded.
-- Progress, durations, activity, notes, flashcards, goals, and achievements live in your browser's IndexedDB (per browser/device); preferences and your AI key live in localStorage. There's no account or sync — use **Backup & restore** to move between devices.
-- AI quizzes send the lesson transcript directly from your browser to your chosen AI provider, using your own key. The key is never included in exported backups.
+- Media files never leave the server except as a stream to the browser that requested them.
+- Progress and all tracking data stay in each visitor's browser (IndexedDB); preferences and your AI key live in localStorage. The AI key is never included in exported backups.
+- AI quizzes send the lesson transcript directly from the browser to your chosen AI provider, using your own key.

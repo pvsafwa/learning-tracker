@@ -1134,6 +1134,11 @@ select:hover { border-color: rgba(255, 138, 61, 0.55); }
 .gate-card h2 { font-size: 22px; font-weight: 800; }
 .gate-card p { color: var(--text-soft); font-size: 13.5px; line-height: 1.6; max-width: 36ch; }
 .gate-card p strong { color: var(--text); }
+.gate-hint { font-size: 12.5px; color: var(--muted); }
+.gate-card code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px;
+  padding: 1px 5px; border-radius: 5px; background: rgba(255,255,255,0.08); color: var(--text);
+}
 .gate-btn { margin-top: 8px; display: inline-flex; align-items: center; gap: 8px; }
 .gate-btn .icon { width: 16px; height: 16px; }
 .gate-link { background: none; border: none; color: var(--muted); font-size: 12.5px; font-weight: 600; text-decoration: underline; cursor: pointer; }

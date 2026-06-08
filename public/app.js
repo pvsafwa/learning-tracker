@@ -100,7 +100,6 @@ const el = {
   sidebarShow:      document.querySelector('#sidebarShow'),
   resizeHandle:     document.querySelector('#resizeHandle'),
   themeToggle:      document.querySelector('#themeToggle'),
-  sourceButton:     document.querySelector('#sourceButton'),
   resetLesson:      document.querySelector('#resetLesson'),
   resetAll:         document.querySelector('#resetAll'),
   confirmModal:     document.querySelector('#confirmModal'),
@@ -210,13 +209,14 @@ async function init() {
   applyPrefs();
   bindEvents();
   initResize();
-  await restoreFolderOnLoad();
+  await loadServerLibrary();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// LOCAL-FIRST DATA LAYER
-// The browser reads the user's folder (File System Access API) and stores all
-// tracking data in IndexedDB. Nothing about the user's files touches a server.
+// DATA LAYER
+// The server hosts the course files (listed via /api/library, streamed via
+// /api/file). Each browser stores its own tracking data in IndexedDB, so every
+// visitor keeps separate progress without any account or central database.
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── IndexedDB ─────────────────────────────────────────────────────────────────
@@ -368,79 +368,52 @@ function hashId(str) {
   return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
 }
 
-// ── Folder access (File System Access API) ────────────────────────────────────
-async function restoreFolderOnLoad() {
-  if (!window.showDirectoryPicker) { showGate('unsupported'); return; }
-  let handle = null;
-  try { handle = await db.getHandle(); } catch {}
-  if (!handle) { showGate('welcome'); return; }
-  let perm = 'prompt';
-  try { perm = await handle.queryPermission({ mode: 'read' }); } catch {}
-  if (perm === 'granted') { await loadFromHandle(handle); return; }
-  state.pendingHandle = handle;
-  showGate('reconnect', handle.name);
-}
-
-async function pickFolder() {
-  if (!window.showDirectoryPicker) { showGate('unsupported'); return; }
-  let handle;
-  try { handle = await window.showDirectoryPicker({ id: 'lt-courses', mode: 'read' }); }
-  catch { return; } // user cancelled
-  try { await db.saveHandle(handle); } catch {}
-  await loadFromHandle(handle);
-}
-
-async function reconnectFolder() {
-  const handle = state.pendingHandle;
-  if (!handle) { pickFolder(); return; }
-  let perm = 'denied';
-  try { perm = await handle.requestPermission({ mode: 'read' }); } catch {}
-  if (perm === 'granted') { state.pendingHandle = null; await loadFromHandle(handle); }
-  else toast('Folder access was not granted', 'warn');
-}
-
-async function loadFromHandle(handle) {
-  state.dirHandle = handle;
-  state.rootName = handle.name;
-  showGate('scanning');
+// ── Course library (served by this app's own server) ──────────────────────────
+// The course folders live on the server; the browser lists them via /api/library
+// and streams each file via /api/file. Per-user progress still lives in this
+// browser (IndexedDB), so everyone who opens the URL gets their own tracking.
+async function loadServerLibrary(isRescan = false) {
+  state.serverMode = true;
+  if (!isRescan) showGate('scanning', 'the courses folder');
   try {
     await loadLibrary();
     await loadStats();
-    el.sourceRoot.textContent = handle.name;
+    el.sourceRoot.textContent = state.rootName;
     if (!state.library.courses.length && !state.library.videos.length) {
-      showGate('empty', handle.name);
+      showGate('empty', state.rootName || 'the courses folder');
       return;
     }
     hideGate();
     evaluateAchievements();
-    showDashboard();
+    if (!isRescan) showDashboard();
   } catch (error) {
     console.error(error);
-    showGate('error', handle.name);
+    showGate('error', state.rootName || 'the server');
   }
 }
 
-async function scanHandle(dirHandle) {
-  const raw = [];
-  const subs = [];
-  async function walk(handle, parts) {
-    for await (const entry of handle.values()) {
-      if (entry.name.startsWith('.')) continue;
-      if (entry.kind === 'directory') {
-        await walk(entry, [...parts, entry.name]);
-      } else if (entry.kind === 'file') {
-        const ext = extOf(entry.name);
-        if (isMediaExt(ext)) raw.push({ name: entry.name, ext, relParts: [...parts, entry.name], handle: entry });
-        else if (SUBTITLE_EXTS.has(ext)) subs.push({ name: entry.name, ext, dir: parts.join('/'), handle: entry });
-      }
-    }
-  }
-  await walk(dirHandle, []);
-  return { raw, subs };
+// The folder lives on the server now, so the gate's "rescan" button just reloads.
+async function pickFolder() { await loadServerLibrary(true); }
+
+function fileUrl(relPath) { return `/api/file?path=${encodeURIComponent(relPath)}`; }
+
+// Fetch the server's library listing and normalise it into buildLibrary's shape.
+async function fetchServerScan() {
+  const res = await fetch('/api/library', { cache: 'no-store' });
+  if (!res.ok) throw new Error(`library ${res.status}`);
+  const data = await res.json();
+  const raw = (data.items || []).map((it) => ({
+    name: it.name, ext: it.ext, relParts: splitRelPath(it.relPath), url: fileUrl(it.relPath)
+  }));
+  const subs = (data.subs || []).map((s) => ({
+    name: s.name, ext: s.ext, dir: s.dir, url: fileUrl(s.relPath)
+  }));
+  return { rootName: data.rootName || 'Courses', raw, subs };
 }
 
 async function fileURLFor(video) {
-  const file = await video._handle.getFile();
+  if (video._url) return video._url;            // server-streamed file
+  const file = await video._handle.getFile();   // demo blob
   return URL.createObjectURL(file);
 }
 
@@ -557,8 +530,10 @@ function buildLibrary(raw, rootName, progressMap, durationMap, subs = []) {
       durationSource: dur != null ? 'browser' : null,
       progress: stored ? { ...emptyProgress(), ...stored } : emptyProgress(),
       hasTranscript: Boolean(sub),
-      _handle: f.handle,
-      _subHandle: sub ? sub.handle : null
+      _handle: f.handle || null,
+      _url: f.url || null,
+      _subHandle: sub ? (sub.handle || null) : null,
+      _subUrl: sub ? (sub.url || null) : null
     };
   });
   videos.sort((a, b) => a.relPath.localeCompare(b.relPath, undefined, { numeric: true, sensitivity: 'base' }));
@@ -609,30 +584,21 @@ function showGate(kind, name = '') {
   el.gate.hidden = false;
   const mark = '<div class="gate-mark">LT</div>';
   let body = '';
-  if (kind === 'unsupported') {
-    body = `${mark}<h2>Open in Chrome or Edge</h2>
-      <p>This app reads your local course folder right in the browser, which needs the File System Access API — available in <strong>Chrome, Edge, Arc or Brave</strong>. Safari and Firefox aren't supported yet.</p>
-      <button class="gate-link" data-gate="demo">Explore a demo instead →</button>`;
-  } else if (kind === 'welcome') {
-    body = `${mark}<h2>Track your learning</h2>
-      <p>Choose the folder on your computer that holds your course folders. Your files stay on your device — nothing is uploaded.</p>
-      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-folder"></span> Choose courses folder</button>
-      <button class="gate-link" data-gate="demo">or explore a demo first →</button>`;
-  } else if (kind === 'reconnect') {
-    body = `${mark}<h2>Welcome back</h2>
-      <p>Reconnect <strong>${escapeHtml(name)}</strong> to continue. Your browser asks permission again each session for your security.</p>
-      <button class="primary-button gate-btn" data-gate="reconnect"><span class="icon icon-folder"></span> Reconnect “${escapeHtml(name)}”</button>
-      <button class="gate-link" data-gate="pick">Choose a different folder</button>`;
-  } else if (kind === 'scanning') {
-    body = `${mark}<h2>Scanning…</h2><p>Reading <strong>${escapeHtml(name || state.rootName || 'your folder')}</strong>.</p><div class="gate-spinner"></div>`;
+  if (kind === 'scanning') {
+    body = `${mark}<h2>Loading your library…</h2>
+      <p>Reading <strong>${escapeHtml(name || state.rootName || 'the courses folder')}</strong> on the server.</p>
+      <div class="gate-spinner"></div>`;
   } else if (kind === 'empty') {
-    body = `${mark}<h2>No media found</h2>
-      <p>No video, audio or PDF files were found in <strong>${escapeHtml(name)}</strong>. Pick a folder that contains your course folders.</p>
-      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-folder"></span> Choose another folder</button>`;
+    body = `${mark}<h2>No courses found</h2>
+      <p>The server didn't find any video, audio or PDF files in <strong>${escapeHtml(name)}</strong>.</p>
+      <p class="gate-hint">Add your course folders to the server's courses directory (or start it with <code>COURSES_DIR=/path/to/courses</code>), then rescan.</p>
+      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-refresh"></span> Rescan</button>
+      <button class="gate-link" data-gate="demo">or explore a demo →</button>`;
   } else {
-    body = `${mark}<h2>Couldn't open that folder</h2>
-      <p>Something went wrong reading <strong>${escapeHtml(name)}</strong>.</p>
-      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-folder"></span> Choose a folder</button>`;
+    body = `${mark}<h2>Couldn't load the library</h2>
+      <p>The app couldn't reach the server to list <strong>${escapeHtml(name)}</strong>. Check that the server is running, then retry.</p>
+      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-refresh"></span> Retry</button>
+      <button class="gate-link" data-gate="demo">or explore a demo →</button>`;
   }
   el.gateCard.innerHTML = body;
 }
@@ -665,10 +631,10 @@ function bindEvents() {
   });
 
   el.refreshButton.addEventListener('click', async () => {
-    if (!state.dirHandle) { pickFolder(); return; }
+    if (state.rootName === 'Demo Library') { toast('Demo library — nothing to rescan', 'info'); return; }
     el.refreshButton.disabled = true;
     el.refreshButton.classList.add('spinning');
-    await loadLibrary();
+    await loadServerLibrary(true);
     if (state.view === 'dashboard') renderDashboard();
     el.refreshButton.disabled = false;
     el.refreshButton.classList.remove('spinning');
@@ -841,12 +807,10 @@ function bindEvents() {
   el.shortcutsClose.addEventListener('click', closeShortcuts);
   el.shortcutsModal.addEventListener('click', (e) => { if (e.target === el.shortcutsModal) closeShortcuts(); });
 
-  // Folder picker (File System Access API)
-  el.sourceButton.addEventListener('click', pickFolder);
+  // Library gate (rescan / demo)
   el.gate.addEventListener('click', (e) => {
     const action = e.target.closest('[data-gate]')?.dataset.gate;
     if (action === 'pick') pickFolder();
-    else if (action === 'reconnect') reconnectFolder();
     else if (action === 'demo') loadDemo();
   });
 
@@ -1520,10 +1484,10 @@ function toast(message, type = 'info', duration = 3200, onClick = null) {
 
 // ── Library loading ──────────────────────────────────────────────────────────
 async function loadLibrary() {
-  if (!state.dirHandle) return;
   const [scan, progressMap, durationMap] = await Promise.all([
-    scanHandle(state.dirHandle), db.getProgressMap(), db.getDurations()
+    fetchServerScan(), db.getProgressMap(), db.getDurations()
   ]);
+  state.rootName = scan.rootName;
   const prevId = state.selectedVideo?.id;
   state.library = buildLibrary(scan.raw, state.rootName, progressMap, durationMap, scan.subs);
   el.sourceRoot.textContent = state.rootName;
@@ -1611,7 +1575,7 @@ function recomputeAggregates() {
 // scan we read just the metadata of each local file (fast, no playback) to fill
 // in lengths progressively. Persisted to IndexedDB so it's a one-time cost.
 async function probeDurations() {
-  const pending = (state.library?.videos || []).filter((v) => v.kind !== 'pdf' && !Number.isFinite(v.durationSeconds) && v._handle);
+  const pending = (state.library?.videos || []).filter((v) => v.kind !== 'pdf' && !Number.isFinite(v.durationSeconds) && (v._url || v._handle));
   if (!pending.length) return;
   const token = (state.probeToken = (state.probeToken || 0) + 1);
   let i = 0;
@@ -1649,9 +1613,13 @@ function probeOne(video) {
       resolve(Number.isFinite(d) ? d : null);
     }, { once: true });
     probe.addEventListener('error', () => { clearTimeout(timer); cleanup(); reject(new Error('decode')); }, { once: true });
-    video._handle.getFile()
-      .then((file) => { url = URL.createObjectURL(file); probe.src = url; })
-      .catch((err) => { clearTimeout(timer); reject(err); });
+    if (video._url) {
+      probe.src = video._url;
+    } else {
+      video._handle.getFile()
+        .then((file) => { url = URL.createObjectURL(file); probe.src = url; })
+        .catch((err) => { clearTimeout(timer); reject(err); });
+    }
   });
 }
 
@@ -1674,8 +1642,8 @@ function renderCurriculum() {
   el.courseList.innerHTML = hasCourses
     ? '<div class="empty-state">No lessons match your filters.</div>'
     : `<div class="empty-state">
-        <p>No courses found in this folder.</p>
-        <button class="primary-button" type="button" data-action="choose-source">Choose courses folder</button>
+        <p>No courses found on the server.</p>
+        <button class="primary-button" type="button" data-action="choose-source">Rescan</button>
       </div>`;
 }
 
@@ -1769,8 +1737,11 @@ function selectVideo(video, options = {}) {
   el.videoFrame.classList.toggle('pdf-mode', isPdf);
   el.videoFrame.classList.remove('is-playing');
 
-  // Release the previous local file URL before loading the next.
-  if (state.currentObjectURL) { URL.revokeObjectURL(state.currentObjectURL); state.currentObjectURL = null; }
+  // Release the previous local file URL before loading the next (server URLs aren't blobs).
+  if (state.currentObjectURL) {
+    if (state.currentObjectURL.startsWith('blob:')) URL.revokeObjectURL(state.currentObjectURL);
+    state.currentObjectURL = null;
+  }
   state.pendingResume = 0;
 
   // Load this lesson's notes.
@@ -1809,7 +1780,7 @@ function selectVideo(video, options = {}) {
   // Resolve the local file to a blob URL (async), guarding against fast re-selection.
   const token = (state.loadToken = (state.loadToken || 0) + 1);
   fileURLFor(video).then((url) => {
-    if (token !== state.loadToken) { URL.revokeObjectURL(url); return; } // superseded
+    if (token !== state.loadToken) { if (url.startsWith('blob:')) URL.revokeObjectURL(url); return; } // superseded
     state.currentObjectURL = url;
     if (isPdf) {
       el.pdfFrame.src = `${url}#view=FitH`;
@@ -1952,8 +1923,8 @@ function loadTranscript(video) {
   if (!has) { if (!el.transcriptDrawer.hidden) el.transcriptDrawer.hidden = true; return; }
 
   const token = (state.transcriptToken = state.transcriptToken + 1);
-  video._subHandle.getFile()
-    .then((file) => file.text())
+  (video._subUrl ? fetch(video._subUrl).then((r) => r.text())
+                 : video._subHandle.getFile().then((file) => file.text()))
     .then((text) => {
       if (token !== state.transcriptToken || state.selectedVideo?.id !== video.id) return;
       state.transcript = parseSubtitles(text);
