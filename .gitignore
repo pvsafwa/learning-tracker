@@ -13,3 +13,5 @@ npm-debug.log*
 # Course media lives on the server, not in git.
 courses/*
 !courses/README.txt
+CLAUDE.md
+.claude/
