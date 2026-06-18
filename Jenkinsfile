@@ -39,7 +39,7 @@ pipeline {
                 }
                 stage('Dockerfile lint') {
                     steps {
-                        sh 'docker run --rm -i hadolint/hadolint --no-fail < Dockerfile'
+                        sh 'docker run --rm -i hadolint/hadolint hadolint --no-fail - < Dockerfile'
                     }
                 }
                 stage('Code scan') {
