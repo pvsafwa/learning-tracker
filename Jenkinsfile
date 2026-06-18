@@ -49,5 +49,21 @@ pipeline {
                 }
             }
         }
+        stage('Build image') {
+            steps {
+                sh '''
+                    GIT_SHA=$(git rev-parse --short HEAD)
+                    docker build -t learning-tracker:${GIT_SHA} .
+                '''
+            }
+        }
+        stage('Image scan') {
+            steps {
+                sh '''
+                    GIT_SHA=$(git rev-parse --short HEAD)
+                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image learning-tracker:${GIT_SHA}
+                '''
+            }
+        }
     }
 }
