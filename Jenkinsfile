@@ -65,5 +65,18 @@ pipeline {
                 '''
             }
         }
+        stage('Push image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'ghcr-credentials', usernameVariable: 'GHCR_USER', passwordVariable: 'GHCR_TOKEN')]) {
+                    sh '''
+                        GIT_SHA=$(git rev-parse --short HEAD)
+                        echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+                        docker tag learning-tracker:${GIT_SHA} ghcr.io/pvsafwa/learning-tracker:${GIT_SHA}
+                        docker push ghcr.io/pvsafwa/learning-tracker:${GIT_SHA}
+                        docker logout ghcr.io
+                    '''
+                }
+            }
+        }
     }
 }
