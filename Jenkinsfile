@@ -25,5 +25,29 @@ pipeline {
                 }
             }
         }
+        stage('Security') {
+            parallel {
+                stage('Dependency check') {
+                    steps {
+                        sh 'npm audit --omit=dev --audit-level=high'
+                    }
+                }
+                stage('Secret scan') {
+                    steps {
+                        sh 'docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest git /repo'
+                    }
+                }
+                stage('Dockerfile lint') {
+                    steps {
+                        sh 'docker run --rm -i hadolint/hadolint --no-fail < Dockerfile'
+                    }
+                }
+                stage('Code scan') {
+                    steps {
+                        sh 'docker run --rm -v "$PWD:/src" semgrep/semgrep semgrep scan --config auto /src'
+                    }
+                }
+            }
+        }
     }
 }
