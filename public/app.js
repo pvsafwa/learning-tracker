@@ -1,11 +1,23 @@
 // ── Persistent preferences ──────────────────────────────────────────────────
 const prefs = {
-  get volume()  { return parseFloat(localStorage.getItem('lt:volume')  ?? '1'); },
-  get muted()   { return localStorage.getItem('lt:muted') === '1'; },
-  get speed()   { return parseFloat(localStorage.getItem('lt:speed')   ?? '1'); },
-  set volume(v) { localStorage.setItem('lt:volume', v); },
-  set muted(v)  { localStorage.setItem('lt:muted', v ? '1' : '0'); },
-  set speed(v)  { localStorage.setItem('lt:speed', v); }
+  get volume() {
+    return parseFloat(localStorage.getItem('lt:volume') ?? '1');
+  },
+  get muted() {
+    return localStorage.getItem('lt:muted') === '1';
+  },
+  get speed() {
+    return parseFloat(localStorage.getItem('lt:speed') ?? '1');
+  },
+  set volume(v) {
+    localStorage.setItem('lt:volume', v);
+  },
+  set muted(v) {
+    localStorage.setItem('lt:muted', v ? '1' : '0');
+  },
+  set speed(v) {
+    localStorage.setItem('lt:speed', v);
+  }
 };
 
 const RING_CIRC = 2 * Math.PI * 52; // r=52
@@ -50,152 +62,152 @@ const state = {
 
 // ── DOM refs ────────────────────────────────────────────────────────────────
 const el = {
-  app:              document.querySelector('#app'),
-  sourceRoot:       document.querySelector('#sourceRoot'),
-  refreshButton:    document.querySelector('#refreshButton'),
-  searchInput:      document.querySelector('#searchInput'),
-  filterChips:      document.querySelector('#filterChips'),
-  courseList:       document.querySelector('#courseList'),
-  ringFill:         document.querySelector('#ringFill'),
-  heroPercent:      document.querySelector('#heroPercent'),
-  statCourses:      document.querySelector('#statCourses'),
-  statProgress:     document.querySelector('#statProgress'),
-  statDone:         document.querySelector('#statDone'),
-  player:           document.querySelector('#player'),
-  videoFrame:       document.querySelector('#videoFrame'),
-  audioStage:       document.querySelector('#audioStage'),
-  audioTitle:       document.querySelector('#audioTitle'),
-  pdfStage:         document.querySelector('#pdfStage'),
-  pdfFrame:         document.querySelector('#pdfFrame'),
-  pdfComplete:      document.querySelector('#pdfComplete'),
-  pdfOpen:          document.querySelector('#pdfOpen'),
-  playerEmpty:      document.querySelector('#playerEmpty'),
-  playerStage:      document.querySelector('#playerStage'),
-  breadcrumb:       document.querySelector('#breadcrumb'),
-  videoTitle:       document.querySelector('#videoTitle'),
-  videoStats:       document.querySelector('#videoStats'),
-  currentTime:      document.querySelector('#currentTime'),
-  durationTime:     document.querySelector('#durationTime'),
-  seekSlider:       document.querySelector('#seekSlider'),
-  seekFill:         document.querySelector('#seekFill'),
-  seekBuffer:       document.querySelector('#seekBuffer'),
-  seekTooltip:      document.querySelector('#seekTooltip'),
-  seekTrack:        document.querySelector('#seekTrack'),
-  playToggle:       document.querySelector('#playToggle'),
-  prevButton:       document.querySelector('#prevButton'),
-  nextButton:       document.querySelector('#nextButton'),
-  skipBack:         document.querySelector('#skipBackButton'),
-  skipForward:      document.querySelector('#skipForwardButton'),
-  muteToggle:       document.querySelector('#muteToggle'),
-  volumeSlider:     document.querySelector('#volumeSlider'),
-  speedSelect:      document.querySelector('#speedSelect'),
-  pipButton:        document.querySelector('#pipButton'),
+  app: document.querySelector('#app'),
+  sourceRoot: document.querySelector('#sourceRoot'),
+  refreshButton: document.querySelector('#refreshButton'),
+  searchInput: document.querySelector('#searchInput'),
+  filterChips: document.querySelector('#filterChips'),
+  courseList: document.querySelector('#courseList'),
+  ringFill: document.querySelector('#ringFill'),
+  heroPercent: document.querySelector('#heroPercent'),
+  statCourses: document.querySelector('#statCourses'),
+  statProgress: document.querySelector('#statProgress'),
+  statDone: document.querySelector('#statDone'),
+  player: document.querySelector('#player'),
+  videoFrame: document.querySelector('#videoFrame'),
+  audioStage: document.querySelector('#audioStage'),
+  audioTitle: document.querySelector('#audioTitle'),
+  pdfStage: document.querySelector('#pdfStage'),
+  pdfFrame: document.querySelector('#pdfFrame'),
+  pdfComplete: document.querySelector('#pdfComplete'),
+  pdfOpen: document.querySelector('#pdfOpen'),
+  playerEmpty: document.querySelector('#playerEmpty'),
+  playerStage: document.querySelector('#playerStage'),
+  breadcrumb: document.querySelector('#breadcrumb'),
+  videoTitle: document.querySelector('#videoTitle'),
+  videoStats: document.querySelector('#videoStats'),
+  currentTime: document.querySelector('#currentTime'),
+  durationTime: document.querySelector('#durationTime'),
+  seekSlider: document.querySelector('#seekSlider'),
+  seekFill: document.querySelector('#seekFill'),
+  seekBuffer: document.querySelector('#seekBuffer'),
+  seekTooltip: document.querySelector('#seekTooltip'),
+  seekTrack: document.querySelector('#seekTrack'),
+  playToggle: document.querySelector('#playToggle'),
+  prevButton: document.querySelector('#prevButton'),
+  nextButton: document.querySelector('#nextButton'),
+  skipBack: document.querySelector('#skipBackButton'),
+  skipForward: document.querySelector('#skipForwardButton'),
+  muteToggle: document.querySelector('#muteToggle'),
+  volumeSlider: document.querySelector('#volumeSlider'),
+  speedSelect: document.querySelector('#speedSelect'),
+  pipButton: document.querySelector('#pipButton'),
   fullscreenButton: document.querySelector('#fullscreenButton'),
-  shortcutsButton:  document.querySelector('#shortcutsButton'),
-  shortcutsModal:   document.querySelector('#shortcutsModal'),
-  shortcutsClose:   document.querySelector('#shortcutsClose'),
-  toastContainer:   document.querySelector('#toastContainer'),
-  controlsOverlay:  document.querySelector('#controlsOverlay'),
-  sidebarToggle:    document.querySelector('#sidebarToggle'),
-  sidebarShow:      document.querySelector('#sidebarShow'),
-  resizeHandle:     document.querySelector('#resizeHandle'),
-  themeToggle:      document.querySelector('#themeToggle'),
-  resetLesson:      document.querySelector('#resetLesson'),
-  resetAll:         document.querySelector('#resetAll'),
-  confirmModal:     document.querySelector('#confirmModal'),
-  confirmTitle:     document.querySelector('#confirmTitle'),
-  confirmBody:      document.querySelector('#confirmBody'),
-  confirmOk:        document.querySelector('#confirmOk'),
-  confirmCancel:    document.querySelector('#confirmCancel'),
+  shortcutsButton: document.querySelector('#shortcutsButton'),
+  shortcutsModal: document.querySelector('#shortcutsModal'),
+  shortcutsClose: document.querySelector('#shortcutsClose'),
+  toastContainer: document.querySelector('#toastContainer'),
+  controlsOverlay: document.querySelector('#controlsOverlay'),
+  sidebarToggle: document.querySelector('#sidebarToggle'),
+  sidebarShow: document.querySelector('#sidebarShow'),
+  resizeHandle: document.querySelector('#resizeHandle'),
+  themeToggle: document.querySelector('#themeToggle'),
+  resetLesson: document.querySelector('#resetLesson'),
+  resetAll: document.querySelector('#resetAll'),
+  confirmModal: document.querySelector('#confirmModal'),
+  confirmTitle: document.querySelector('#confirmTitle'),
+  confirmBody: document.querySelector('#confirmBody'),
+  confirmOk: document.querySelector('#confirmOk'),
+  confirmCancel: document.querySelector('#confirmCancel'),
   // Dashboard
-  homeButton:       document.querySelector('#homeButton'),
-  playerWorkspace:  document.querySelector('.player-workspace'),
-  dashboard:        document.querySelector('#dashboard'),
-  dashGreeting:     document.querySelector('#dashGreeting'),
-  statTiles:        document.querySelector('#statTiles'),
-  continueSection:  document.querySelector('#continueSection'),
-  continueRow:      document.querySelector('#continueRow'),
-  goalsList:        document.querySelector('#goalsList'),
-  addGoalBtn:       document.querySelector('#addGoalBtn'),
-  heatmap:          document.querySelector('#heatmap'),
-  activitySub:      document.querySelector('#activitySub'),
-  badges:           document.querySelector('#badges'),
+  homeButton: document.querySelector('#homeButton'),
+  playerWorkspace: document.querySelector('.player-workspace'),
+  dashboard: document.querySelector('#dashboard'),
+  dashGreeting: document.querySelector('#dashGreeting'),
+  statTiles: document.querySelector('#statTiles'),
+  continueSection: document.querySelector('#continueSection'),
+  continueRow: document.querySelector('#continueRow'),
+  goalsList: document.querySelector('#goalsList'),
+  addGoalBtn: document.querySelector('#addGoalBtn'),
+  heatmap: document.querySelector('#heatmap'),
+  activitySub: document.querySelector('#activitySub'),
+  badges: document.querySelector('#badges'),
   // Goal modal
-  goalModal:        document.querySelector('#goalModal'),
-  goalClose:        document.querySelector('#goalClose'),
-  goalTitle:        document.querySelector('#goalTitle'),
-  goalCourses:      document.querySelector('#goalCourses'),
-  goalDate:         document.querySelector('#goalDate'),
-  goalMinutes:      document.querySelector('#goalMinutes'),
-  goalHint:         document.querySelector('#goalHint'),
-  goalSave:         document.querySelector('#goalSave'),
-  appShell:         document.querySelector('#app'),
-  gate:             document.querySelector('#gate'),
-  gateCard:         document.querySelector('#gateCard'),
+  goalModal: document.querySelector('#goalModal'),
+  goalClose: document.querySelector('#goalClose'),
+  goalTitle: document.querySelector('#goalTitle'),
+  goalCourses: document.querySelector('#goalCourses'),
+  goalDate: document.querySelector('#goalDate'),
+  goalMinutes: document.querySelector('#goalMinutes'),
+  goalHint: document.querySelector('#goalHint'),
+  goalSave: document.querySelector('#goalSave'),
+  appShell: document.querySelector('#app'),
+  gate: document.querySelector('#gate'),
+  gateCard: document.querySelector('#gateCard'),
   // Notes
-  notesToggle:      document.querySelector('#notesToggle'),
-  notesBadge:       document.querySelector('#notesBadge'),
-  notesDrawer:      document.querySelector('#notesDrawer'),
-  notesClose:       document.querySelector('#notesClose'),
-  notesExport:      document.querySelector('#notesExport'),
-  noteInput:        document.querySelector('#noteInput'),
-  noteAt:           document.querySelector('#noteAt'),
-  noteBookmark:     document.querySelector('#noteBookmark'),
-  noteAdd:          document.querySelector('#noteAdd'),
-  notesList:        document.querySelector('#notesList'),
+  notesToggle: document.querySelector('#notesToggle'),
+  notesBadge: document.querySelector('#notesBadge'),
+  notesDrawer: document.querySelector('#notesDrawer'),
+  notesClose: document.querySelector('#notesClose'),
+  notesExport: document.querySelector('#notesExport'),
+  noteInput: document.querySelector('#noteInput'),
+  noteAt: document.querySelector('#noteAt'),
+  noteBookmark: document.querySelector('#noteBookmark'),
+  noteAdd: document.querySelector('#noteAdd'),
+  notesList: document.querySelector('#notesList'),
   // Transcript
   transcriptToggle: document.querySelector('#transcriptToggle'),
   transcriptDrawer: document.querySelector('#transcriptDrawer'),
-  transcriptClose:  document.querySelector('#transcriptClose'),
+  transcriptClose: document.querySelector('#transcriptClose'),
   transcriptSearch: document.querySelector('#transcriptSearch'),
-  transcriptList:   document.querySelector('#transcriptList'),
-  ccButton:         document.querySelector('#ccButton'),
+  transcriptList: document.querySelector('#transcriptList'),
+  ccButton: document.querySelector('#ccButton'),
   // Flashcards
-  cardsToggle:      document.querySelector('#cardsToggle'),
-  cardsBadge:       document.querySelector('#cardsBadge'),
-  cardsDrawer:      document.querySelector('#cardsDrawer'),
-  cardsClose:       document.querySelector('#cardsClose'),
+  cardsToggle: document.querySelector('#cardsToggle'),
+  cardsBadge: document.querySelector('#cardsBadge'),
+  cardsDrawer: document.querySelector('#cardsDrawer'),
+  cardsClose: document.querySelector('#cardsClose'),
   cardsReviewLesson: document.querySelector('#cardsReviewLesson'),
-  cardFront:        document.querySelector('#cardFront'),
-  cardBack:         document.querySelector('#cardBack'),
-  cardLinkTime:     document.querySelector('#cardLinkTime'),
-  cardAt:           document.querySelector('#cardAt'),
-  cardAdd:          document.querySelector('#cardAdd'),
-  cardsList:        document.querySelector('#cardsList'),
+  cardFront: document.querySelector('#cardFront'),
+  cardBack: document.querySelector('#cardBack'),
+  cardLinkTime: document.querySelector('#cardLinkTime'),
+  cardAt: document.querySelector('#cardAt'),
+  cardAdd: document.querySelector('#cardAdd'),
+  cardsList: document.querySelector('#cardsList'),
   // Review modal
-  reviewModal:      document.querySelector('#reviewModal'),
-  reviewProgress:   document.querySelector('#reviewProgress'),
-  reviewClose:      document.querySelector('#reviewClose'),
-  reviewContext:    document.querySelector('#reviewContext'),
-  reviewFront:      document.querySelector('#reviewFront'),
-  reviewDivider:    document.querySelector('#reviewDivider'),
-  reviewBack:       document.querySelector('#reviewBack'),
-  reviewShow:       document.querySelector('#reviewShow'),
-  reviewGrades:     document.querySelector('#reviewGrades'),
-  reviewBody:       document.querySelector('.review-card .review-body'),
+  reviewModal: document.querySelector('#reviewModal'),
+  reviewProgress: document.querySelector('#reviewProgress'),
+  reviewClose: document.querySelector('#reviewClose'),
+  reviewContext: document.querySelector('#reviewContext'),
+  reviewFront: document.querySelector('#reviewFront'),
+  reviewDivider: document.querySelector('#reviewDivider'),
+  reviewBack: document.querySelector('#reviewBack'),
+  reviewShow: document.querySelector('#reviewShow'),
+  reviewGrades: document.querySelector('#reviewGrades'),
+  reviewBody: document.querySelector('.review-card .review-body'),
   // Dashboard flashcards
-  flashSection:     document.querySelector('#flashSection'),
-  flashSub:         document.querySelector('#flashSub'),
-  flashCta:         document.querySelector('#flashCta'),
+  flashSection: document.querySelector('#flashSection'),
+  flashSub: document.querySelector('#flashSub'),
+  flashCta: document.querySelector('#flashCta'),
   // Account
-  userButton:       document.querySelector('#userButton'),
-  userAvatar:       document.querySelector('#userAvatar'),
-  settingsModal:    document.querySelector('#settingsModal'),
-  settingsClose:    document.querySelector('#settingsClose'),
-  accountAvatar:    document.querySelector('#accountAvatar'),
-  accountName:      document.querySelector('#accountName'),
-  accountEmail:     document.querySelector('#accountEmail'),
-  accountRole:      document.querySelector('#accountRole'),
-  signOutBtn:       document.querySelector('#signOutBtn'),
-  adminOpenBtn:     document.querySelector('#adminOpenBtn'),
+  userButton: document.querySelector('#userButton'),
+  userAvatar: document.querySelector('#userAvatar'),
+  settingsModal: document.querySelector('#settingsModal'),
+  settingsClose: document.querySelector('#settingsClose'),
+  accountAvatar: document.querySelector('#accountAvatar'),
+  accountName: document.querySelector('#accountName'),
+  accountEmail: document.querySelector('#accountEmail'),
+  accountRole: document.querySelector('#accountRole'),
+  signOutBtn: document.querySelector('#signOutBtn'),
+  adminOpenBtn: document.querySelector('#adminOpenBtn'),
   // Admin
-  adminModal:       document.querySelector('#adminModal'),
-  adminClose:       document.querySelector('#adminClose'),
-  adminUserList:    document.querySelector('#adminUserList'),
-  adminAddEmail:    document.querySelector('#adminAddEmail'),
-  adminAddRole:     document.querySelector('#adminAddRole'),
-  adminAddBtn:      document.querySelector('#adminAddBtn'),
-  adminHint:        document.querySelector('#adminHint')
+  adminModal: document.querySelector('#adminModal'),
+  adminClose: document.querySelector('#adminClose'),
+  adminUserList: document.querySelector('#adminUserList'),
+  adminAddEmail: document.querySelector('#adminAddEmail'),
+  adminAddRole: document.querySelector('#adminAddRole'),
+  adminAddBtn: document.querySelector('#adminAddBtn'),
+  adminHint: document.querySelector('#adminHint')
 };
 
 // ── Boot ────────────────────────────────────────────────────────────────────
@@ -223,7 +235,10 @@ async function boot() {
     return;
   }
   state.auth = me;
-  if (!me.authenticated) { showSignIn(); return; }
+  if (!me.authenticated) {
+    showSignIn();
+    return;
+  }
   state.user = me.user;
   updateUserUI();
   await loadServerLibrary();
@@ -245,7 +260,9 @@ function onUnauthorized() {
 }
 
 async function signOut() {
-  try { await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch {}
+  try {
+    await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' });
+  } catch {}
   location.href = '/';
 }
 
@@ -254,12 +271,19 @@ async function devLogin() {
   if (!email) return;
   try {
     const res = await fetch('/auth/dev', {
-      method: 'POST', credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
     });
-    if (!res.ok) { showGate('signin', 'denied'); return; }
+    if (!res.ok) {
+      showGate('signin', 'denied');
+      return;
+    }
     location.href = '/';
-  } catch { showGate('signin', 'denied'); }
+  } catch {
+    showGate('signin', 'denied');
+  }
 }
 
 function updateUserUI() {
@@ -293,10 +317,15 @@ async function api(path, opts = {}) {
     init.headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
   }
   const res = await fetch('/api' + path, init);
-  if (res.status === 401) { onUnauthorized(); throw new Error('unauthorized'); }
+  if (res.status === 401) {
+    onUnauthorized();
+    throw new Error('unauthorized');
+  }
   if (!res.ok) {
     let detail = '';
-    try { detail = (await res.json())?.error || ''; } catch {}
+    try {
+      detail = (await res.json())?.error || '';
+    } catch {}
     throw new Error(`api ${res.status} ${path}${detail ? ' ' + detail : ''}`);
   }
   if (res.status === 204) return null;
@@ -306,11 +335,16 @@ async function api(path, opts = {}) {
 
 const db = {
   getProgressMap: () => api('/progress'),
-  saveProgress: (id, rec) => api(`/progress/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(rec) }),
+  saveProgress: (id, rec) =>
+    api(`/progress/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(rec) }),
   resetProgress: (idsOrAll) =>
-    api('/progress/reset', { method: 'POST', body: JSON.stringify(idsOrAll === 'all' ? { all: true } : { ids: idsOrAll }) }),
+    api('/progress/reset', {
+      method: 'POST',
+      body: JSON.stringify(idsOrAll === 'all' ? { all: true } : { ids: idsOrAll })
+    }),
   getDurations: () => api('/durations'),
-  saveDuration: (id, sec) => api('/durations', { method: 'POST', body: JSON.stringify({ videoId: id, seconds: sec }) }),
+  saveDuration: (id, sec) =>
+    api('/durations', { method: 'POST', body: JSON.stringify({ videoId: id, seconds: sec }) }),
   getActivity: () => api('/activity'),
   recordActivity: (day, seconds, completed) =>
     api('/activity', { method: 'POST', body: JSON.stringify({ day, seconds, completed }) }),
@@ -318,37 +352,117 @@ const db = {
   saveGoal: (goal) => api('/goals', { method: 'POST', body: JSON.stringify(goal) }),
   deleteGoal: (id) => api(`/goals/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   getAchievements: () => api('/achievements'),
-  saveAchievements: (ids) => api('/achievements', { method: 'POST', body: JSON.stringify({ ids }) }),
+  saveAchievements: (ids) =>
+    api('/achievements', { method: 'POST', body: JSON.stringify({ ids }) }),
   getNotes: (videoId) => api(`/notes/${encodeURIComponent(videoId)}`),
-  saveNotes: (videoId, arr) => api(`/notes/${encodeURIComponent(videoId)}`, { method: 'PUT', body: JSON.stringify(arr) }),
+  saveNotes: (videoId, arr) =>
+    api(`/notes/${encodeURIComponent(videoId)}`, { method: 'PUT', body: JSON.stringify(arr) }),
   getAllCards: () => api('/cards'),
-  saveCard: (card) => api(`/cards/${encodeURIComponent(card.id)}`, { method: 'PUT', body: JSON.stringify(card) }),
+  saveCard: (card) =>
+    api(`/cards/${encodeURIComponent(card.id)}`, { method: 'PUT', body: JSON.stringify(card) }),
   deleteCard: (id) => api(`/cards/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   // Admin (allowlist management)
   adminListUsers: () => api('/admin/users'),
-  adminAddUser: (email, role) => api('/admin/users', { method: 'POST', body: JSON.stringify({ email, role }) }),
-  adminUpdateUser: (id, patch) => api(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  adminAddUser: (email, role) =>
+    api('/admin/users', { method: 'POST', body: JSON.stringify({ email, role }) }),
+  adminUpdateUser: (id, patch) =>
+    api(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   adminDeleteUser: (id) => api(`/admin/users/${id}`, { method: 'DELETE' })
 };
 
 async function getStats() {
-  const [activity, goals, achievements] = await Promise.all([db.getActivity(), db.getGoals(), db.getAchievements()]);
-  return { activity, lifetimeWatchSeconds: activity.reduce((s, a) => s + a.watchSeconds, 0), goals, achievements };
+  const [activity, goals, achievements] = await Promise.all([
+    db.getActivity(),
+    db.getGoals(),
+    db.getAchievements()
+  ]);
+  return {
+    activity,
+    lifetimeWatchSeconds: activity.reduce((s, a) => s + a.watchSeconds, 0),
+    goals,
+    achievements
+  };
 }
 
 // ── Media type helpers (client-side) ──────────────────────────────────────────
-const VIDEO_EXTS = new Set(['.mp4', '.m4v', '.mov', '.mkv', '.avi', '.webm', '.wmv', '.flv', '.mpg', '.mpeg', '.ts', '.m2ts', '.mts', '.ogv', '.3gp', '.3g2', '.f4v']);
-const AUDIO_EXTS = new Set(['.mp3', '.m4a', '.m4b', '.aac', '.wav', '.flac', '.ogg', '.oga', '.opus', '.wma', '.aiff', '.aif', '.alac', '.mka']);
+const VIDEO_EXTS = new Set([
+  '.mp4',
+  '.m4v',
+  '.mov',
+  '.mkv',
+  '.avi',
+  '.webm',
+  '.wmv',
+  '.flv',
+  '.mpg',
+  '.mpeg',
+  '.ts',
+  '.m2ts',
+  '.mts',
+  '.ogv',
+  '.3gp',
+  '.3g2',
+  '.f4v'
+]);
+const AUDIO_EXTS = new Set([
+  '.mp3',
+  '.m4a',
+  '.m4b',
+  '.aac',
+  '.wav',
+  '.flac',
+  '.ogg',
+  '.oga',
+  '.opus',
+  '.wma',
+  '.aiff',
+  '.aif',
+  '.alac',
+  '.mka'
+]);
 const DOC_EXTS = new Set(['.pdf']);
 const SUBTITLE_EXTS = new Set(['.srt', '.vtt']);
-function isMediaExt(e) { return VIDEO_EXTS.has(e) || AUDIO_EXTS.has(e) || DOC_EXTS.has(e); }
-function mediaKind(e) { return AUDIO_EXTS.has(e) ? 'audio' : DOC_EXTS.has(e) ? 'pdf' : 'video'; }
-function browserPlayableHint(e) {
-  return ['.mp4', '.m4v', '.mov', '.webm', '.ogv', '.mp3', '.m4a', '.m4b', '.aac', '.wav', '.ogg', '.oga', '.opus', '.flac', '.pdf'].includes(e) ? 'likely' : 'depends-on-browser-codec';
+function isMediaExt(e) {
+  return VIDEO_EXTS.has(e) || AUDIO_EXTS.has(e) || DOC_EXTS.has(e);
 }
-function extOf(name) { const i = name.lastIndexOf('.'); return i < 0 ? '' : name.slice(i).toLowerCase(); }
-function nameNoExt(name) { const i = name.lastIndexOf('.'); return i < 0 ? name : name.slice(0, i); }
-function titleFromFilename(n) { return n.replace(/\.[^.]+$/, '').replace(/\s+/g, ' ').trim(); }
+function mediaKind(e) {
+  return AUDIO_EXTS.has(e) ? 'audio' : DOC_EXTS.has(e) ? 'pdf' : 'video';
+}
+function browserPlayableHint(e) {
+  return [
+    '.mp4',
+    '.m4v',
+    '.mov',
+    '.webm',
+    '.ogv',
+    '.mp3',
+    '.m4a',
+    '.m4b',
+    '.aac',
+    '.wav',
+    '.ogg',
+    '.oga',
+    '.opus',
+    '.flac',
+    '.pdf'
+  ].includes(e)
+    ? 'likely'
+    : 'depends-on-browser-codec';
+}
+function extOf(name) {
+  const i = name.lastIndexOf('.');
+  return i < 0 ? '' : name.slice(i).toLowerCase();
+}
+function nameNoExt(name) {
+  const i = name.lastIndexOf('.');
+  return i < 0 ? name : name.slice(0, i);
+}
+function titleFromFilename(n) {
+  return n
+    .replace(/\.[^.]+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 // ── Subtitle parsing (.srt / .vtt) ────────────────────────────────────────────
 function parseSubtitles(text) {
@@ -358,11 +472,18 @@ function parseSubtitles(text) {
     const lines = block.split('\n').filter((l) => l.trim() && l.trim().toUpperCase() !== 'WEBVTT');
     const tIdx = lines.findIndex((l) => l.includes('-->'));
     if (tIdx < 0) continue;
-    const m = lines[tIdx].match(/(\d{1,2}:\d{2}(?::\d{2})?[.,]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}(?::\d{2})?[.,]\d{1,3})/);
+    const m = lines[tIdx].match(
+      /(\d{1,2}:\d{2}(?::\d{2})?[.,]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}(?::\d{2})?[.,]\d{1,3})/
+    );
     if (!m) continue;
     const start = parseSubTime(m[1]);
     const end = parseSubTime(m[2]);
-    const cueText = lines.slice(tIdx + 1).join(' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    const cueText = lines
+      .slice(tIdx + 1)
+      .join(' ')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
     if (cueText) cues.push({ start, end, text: cueText });
   }
   return cues;
@@ -375,18 +496,37 @@ function parseSubTime(ts) {
 }
 function cuesToVtt(cues) {
   const fmt = (s) => {
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = (s % 60);
+    const h = Math.floor(s / 3600),
+      m = Math.floor((s % 3600) / 60),
+      sec = s % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${sec.toFixed(3).padStart(6, '0')}`;
   };
   let out = 'WEBVTT\n\n';
   for (const c of cues) out += `${fmt(c.start)} --> ${fmt(c.end)}\n${c.text}\n\n`;
   return out;
 }
-function splitRelPath(p) { return p.split(/[\\/]+/).filter(Boolean); }
-function emptyProgress() { return { startedAt: null, lastWatchedAt: null, completedAt: null, watchSeconds: 0, resumeSeconds: 0, percent: 0, completed: false }; }
+function splitRelPath(p) {
+  return p.split(/[\\/]+/).filter(Boolean);
+}
+function emptyProgress() {
+  return {
+    startedAt: null,
+    lastWatchedAt: null,
+    completedAt: null,
+    watchSeconds: 0,
+    resumeSeconds: 0,
+    percent: 0,
+    completed: false
+  };
+}
 function hashId(str) {
-  let h1 = 0x811c9dc5, h2 = 0xc2b2ae35;
-  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 0x01000193); h2 = Math.imul(h2 ^ c, 0x85ebca6b); }
+  let h1 = 0x811c9dc5,
+    h2 = 0xc2b2ae35;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193);
+    h2 = Math.imul(h2 ^ c, 0x85ebca6b);
+  }
   return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
 }
 
@@ -415,9 +555,13 @@ async function loadServerLibrary(isRescan = false) {
 }
 
 // The folder lives on the server now, so the gate's "rescan" button just reloads.
-async function pickFolder() { await loadServerLibrary(true); }
+async function pickFolder() {
+  await loadServerLibrary(true);
+}
 
-function fileUrl(relPath) { return `/api/file?path=${encodeURIComponent(relPath)}`; }
+function fileUrl(relPath) {
+  return `/api/file?path=${encodeURIComponent(relPath)}`;
+}
 
 // Fetch the server's library listing and normalise it into buildLibrary's shape.
 async function fetchServerScan() {
@@ -425,10 +569,16 @@ async function fetchServerScan() {
   if (!res.ok) throw new Error(`library ${res.status}`);
   const data = await res.json();
   const raw = (data.items || []).map((it) => ({
-    name: it.name, ext: it.ext, relParts: splitRelPath(it.relPath), url: fileUrl(it.relPath)
+    name: it.name,
+    ext: it.ext,
+    relParts: splitRelPath(it.relPath),
+    url: fileUrl(it.relPath)
   }));
   const subs = (data.subs || []).map((s) => ({
-    name: s.name, ext: s.ext, dir: s.dir, url: fileUrl(s.relPath)
+    name: s.name,
+    ext: s.ext,
+    dir: s.dir,
+    url: fileUrl(s.relPath)
   }));
   return { rootName: data.rootName || 'Courses', raw, subs };
 }
@@ -459,8 +609,14 @@ function buildLibrary(raw, rootName, progressMap, durationMap, subs = []) {
       return sb === base || sb.startsWith(`${base}.`);
     });
     return {
-      id, relPath, title: titleFromFilename(f.name), coursePath: rawHierarchy.join('/'),
-      hierarchy, kind: mediaKind(f.ext), ext: f.ext, playableHint: browserPlayableHint(f.ext),
+      id,
+      relPath,
+      title: titleFromFilename(f.name),
+      coursePath: rawHierarchy.join('/'),
+      hierarchy,
+      kind: mediaKind(f.ext),
+      ext: f.ext,
+      playableHint: browserPlayableHint(f.ext),
       sizeBytes: 0,
       durationSeconds: Number.isFinite(dur) ? dur : null,
       durationSource: dur != null ? 'browser' : null,
@@ -468,11 +624,13 @@ function buildLibrary(raw, rootName, progressMap, durationMap, subs = []) {
       hasTranscript: Boolean(sub),
       _handle: f.handle || null,
       _url: f.url || null,
-      _subHandle: sub ? (sub.handle || null) : null,
-      _subUrl: sub ? (sub.url || null) : null
+      _subHandle: sub ? sub.handle || null : null,
+      _subUrl: sub ? sub.url || null : null
     };
   });
-  videos.sort((a, b) => a.relPath.localeCompare(b.relPath, undefined, { numeric: true, sensitivity: 'base' }));
+  videos.sort((a, b) =>
+    a.relPath.localeCompare(b.relPath, undefined, { numeric: true, sensitivity: 'base' })
+  );
 
   const root = createFolderNode('library', rootName, '');
   for (const v of videos) {
@@ -480,24 +638,47 @@ function buildLibrary(raw, rootName, progressMap, durationMap, subs = []) {
     for (const seg of v.hierarchy) {
       const path = node.path ? `${node.path}/${seg}` : seg;
       let child = node.childMap.get(seg);
-      if (!child) { child = createFolderNode(path, seg, path); node.childMap.set(seg, child); node.children.push(child); }
+      if (!child) {
+        child = createFolderNode(path, seg, path);
+        node.childMap.set(seg, child);
+        node.children.push(child);
+      }
       node = child;
     }
     node.videos.push(v);
   }
   finalizeFolder(root);
   stripMaps(root);
-  return { sourceRoot: rootName, courses: root.children, videos, totals: summarize(videos), scan: { running: false } };
+  return {
+    sourceRoot: rootName,
+    courses: root.children,
+    videos,
+    totals: summarize(videos),
+    scan: { running: false }
+  };
 }
-function createFolderNode(id, name, path) { return { id, name, path, children: [], videos: [], summary: emptySummary(), childMap: new Map() }; }
+function createFolderNode(id, name, path) {
+  return { id, name, path, children: [], videos: [], summary: emptySummary(), childMap: new Map() };
+}
 function finalizeFolder(node) {
   for (const c of node.children) finalizeFolder(c);
   node.summary = summarize(collectDescendantVideos(node));
-  node.children.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
-  node.videos.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }));
+  node.children.sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+  );
+  node.videos.sort((a, b) =>
+    a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
+  );
 }
-function collectDescendantVideos(node) { const v = [...node.videos]; for (const c of node.children) v.push(...collectDescendantVideos(c)); return v; }
-function stripMaps(node) { delete node.childMap; for (const c of node.children) stripMaps(c); }
+function collectDescendantVideos(node) {
+  const v = [...node.videos];
+  for (const c of node.children) v.push(...collectDescendantVideos(c));
+  return v;
+}
+function stripMaps(node) {
+  delete node.childMap;
+  for (const c of node.children) stripMaps(c);
+}
 function summarize(videos) {
   const total = videos.length;
   const completed = videos.filter((v) => v.progress.completed).length;
@@ -506,15 +687,34 @@ function summarize(videos) {
   const known = timed.filter((v) => Number.isFinite(v.durationSeconds));
   const totalDurationSeconds = known.reduce((s, v) => s + v.durationSeconds, 0);
   return {
-    total, started, completed, remaining: Math.max(total - completed, 0),
+    total,
+    started,
+    completed,
+    remaining: Math.max(total - completed, 0),
     progressPercent: total ? Math.round((completed / total) * 1000) / 10 : 0,
-    totalDurationSeconds, knownDurationCount: known.length, unknownDurationCount: timed.length - known.length
+    totalDurationSeconds,
+    knownDurationCount: known.length,
+    unknownDurationCount: timed.length - known.length
   };
 }
-function emptySummary() { return { total: 0, started: 0, completed: 0, remaining: 0, progressPercent: 0, totalDurationSeconds: 0, knownDurationCount: 0, unknownDurationCount: 0 }; }
+function emptySummary() {
+  return {
+    total: 0,
+    started: 0,
+    completed: 0,
+    remaining: 0,
+    progressPercent: 0,
+    totalDurationSeconds: 0,
+    knownDurationCount: 0,
+    unknownDurationCount: 0
+  };
+}
 
 // ── Gate / welcome overlay ────────────────────────────────────────────────────
-function hideGate() { el.gate.hidden = true; el.appShell.classList.remove('gated'); }
+function hideGate() {
+  el.gate.hidden = true;
+  el.appShell.classList.remove('gated');
+}
 function showGate(kind, name = '') {
   el.appShell.classList.add('gated');
   el.gate.hidden = false;
@@ -564,10 +764,10 @@ function applyPrefs() {
   if (width) el.app.style.setProperty('--sidebar-width', width);
 
   el.player.volume = prefs.volume;
-  el.player.muted  = prefs.muted;
+  el.player.muted = prefs.muted;
   el.player.playbackRate = prefs.speed;
-  el.volumeSlider.value  = String(prefs.muted ? 0 : prefs.volume);
-  el.speedSelect.value   = String(prefs.speed);
+  el.volumeSlider.value = String(prefs.muted ? 0 : prefs.volume);
+  el.speedSelect.value = String(prefs.speed);
   updateVolumeFill();
 
   if (!('pictureInPictureEnabled' in document) || !document.pictureInPictureEnabled) {
@@ -578,7 +778,7 @@ function applyPrefs() {
 // ── Events ──────────────────────────────────────────────────────────────────
 function bindEvents() {
   el.sidebarToggle.addEventListener('click', () => setSidebarCollapsed(true));
-  el.sidebarShow.addEventListener('click',   () => setSidebarCollapsed(false));
+  el.sidebarShow.addEventListener('click', () => setSidebarCollapsed(false));
   el.themeToggle.addEventListener('click', () => {
     const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
     applyTheme(next);
@@ -623,9 +823,15 @@ function bindEvents() {
   });
 
   el.courseList.addEventListener('click', (event) => {
-    if (event.target.closest('[data-action="choose-source"]')) { pickFolder(); return; }
+    if (event.target.closest('[data-action="choose-source"]')) {
+      pickFolder();
+      return;
+    }
     const resetNode = event.target.closest('[data-reset-node]');
-    if (resetNode) { resetCourse(resetNode.dataset.resetNode); return; }
+    if (resetNode) {
+      resetCourse(resetNode.dataset.resetNode);
+      return;
+    }
     const lesson = event.target.closest('[data-video-id]');
     if (lesson) {
       if (Date.now() - state.lastPointerSelectionAt < 600) return;
@@ -648,7 +854,9 @@ function bindEvents() {
     // Local blob URLs don't support media fragments, so seek the resume point here
     // (instant and reliable for local files).
     if (state.pendingResume > 0 && state.pendingResume < durationSeconds - 1) {
-      try { el.player.currentTime = state.pendingResume; } catch {}
+      try {
+        el.player.currentTime = state.pendingResume;
+      } catch {}
     }
     state.pendingResume = 0;
     updatePlayerControls();
@@ -656,8 +864,18 @@ function bindEvents() {
   });
 
   el.player.addEventListener('canplay', () => attemptPlayback());
-  el.player.addEventListener('play',  () => { el.videoFrame.classList.add('is-playing'); saveProgress('play'); updatePlayerControls(); scheduleControlsHide(); });
-  el.player.addEventListener('pause', () => { el.videoFrame.classList.remove('is-playing'); saveProgress('pause'); updatePlayerControls(); showControls(); });
+  el.player.addEventListener('play', () => {
+    el.videoFrame.classList.add('is-playing');
+    saveProgress('play');
+    updatePlayerControls();
+    scheduleControlsHide();
+  });
+  el.player.addEventListener('pause', () => {
+    el.videoFrame.classList.remove('is-playing');
+    saveProgress('pause');
+    updatePlayerControls();
+    showControls();
+  });
   el.player.addEventListener('ended', () => {
     el.videoFrame.classList.remove('is-playing');
     saveProgress('ended', { renderList: true });
@@ -665,37 +883,60 @@ function bindEvents() {
     showControls();
     window.setTimeout(() => playAdjacent(1, true), 350);
   });
-  el.player.addEventListener('seeking', () => { state.isSeeking = true; });
-  el.player.addEventListener('seeked',  () => { state.isSeeking = false; saveProgress('seeked', { renderList: true }); updatePlayerControls(); });
+  el.player.addEventListener('seeking', () => {
+    state.isSeeking = true;
+  });
+  el.player.addEventListener('seeked', () => {
+    state.isSeeking = false;
+    saveProgress('seeked', { renderList: true });
+    updatePlayerControls();
+  });
   el.player.addEventListener('timeupdate', () => {
     updatePlayerControls();
     if (!state.isSeeking) saveProgress('progress', { throttle: true });
   });
   el.player.addEventListener('progress', updateBuffered);
-  el.player.addEventListener('volumechange', () => { prefs.volume = el.player.volume; prefs.muted = el.player.muted; updatePlayerControls(); });
-  el.player.addEventListener('ratechange',   () => { prefs.speed = el.player.playbackRate; updatePlayerControls(); });
-  el.player.addEventListener('error', () => { state.pendingAutoplay = false; renderVideoStats('Needs codec/transcoder'); });
+  el.player.addEventListener('volumechange', () => {
+    prefs.volume = el.player.volume;
+    prefs.muted = el.player.muted;
+    updatePlayerControls();
+  });
+  el.player.addEventListener('ratechange', () => {
+    prefs.speed = el.player.playbackRate;
+    updatePlayerControls();
+  });
+  el.player.addEventListener('error', () => {
+    state.pendingAutoplay = false;
+    renderVideoStats('Needs codec/transcoder');
+  });
 
   // Controls
   el.playToggle.addEventListener('click', togglePlayback);
   el.prevButton.addEventListener('click', () => playAdjacent(-1, true));
   el.nextButton.addEventListener('click', () => playAdjacent(1, true));
-  el.skipBack.addEventListener('click',    () => seekRelative(-10));
+  el.skipBack.addEventListener('click', () => seekRelative(-10));
   el.skipForward.addEventListener('click', () => seekRelative(10));
 
-  el.muteToggle.addEventListener('click', () => { el.player.muted = !el.player.muted; updatePlayerControls(); });
-  el.volumeSlider.addEventListener('input', () => {
-    el.player.volume = Number(el.volumeSlider.value);
-    el.player.muted  = el.player.volume === 0;
+  el.muteToggle.addEventListener('click', () => {
+    el.player.muted = !el.player.muted;
     updatePlayerControls();
   });
-  el.speedSelect.addEventListener('change', () => { el.player.playbackRate = Number(el.speedSelect.value); });
+  el.volumeSlider.addEventListener('input', () => {
+    el.player.volume = Number(el.volumeSlider.value);
+    el.player.muted = el.player.volume === 0;
+    updatePlayerControls();
+  });
+  el.speedSelect.addEventListener('change', () => {
+    el.player.playbackRate = Number(el.speedSelect.value);
+  });
 
   el.pipButton.addEventListener('click', async () => {
     try {
       if (document.pictureInPictureElement) await document.exitPictureInPicture();
       else if (state.selectedVideo) await el.player.requestPictureInPicture();
-    } catch { toast('Picture-in-Picture unavailable', 'warn'); }
+    } catch {
+      toast('Picture-in-Picture unavailable', 'warn');
+    }
   });
 
   el.videoFrame.addEventListener('pointerdown', (e) => {
@@ -742,8 +983,13 @@ function bindEvents() {
     el.videoFrame.classList.add('cursor-visible');
     if (!el.player.paused) scheduleControlsHide();
   });
-  el.videoFrame.addEventListener('mouseleave', () => { if (!el.player.paused) scheduleControlsHide(800); });
-  el.controlsOverlay.addEventListener('mouseenter', () => { clearTimeout(state.controlsHideTimer); showControls(); });
+  el.videoFrame.addEventListener('mouseleave', () => {
+    if (!el.player.paused) scheduleControlsHide(800);
+  });
+  el.controlsOverlay.addEventListener('mouseenter', () => {
+    clearTimeout(state.controlsHideTimer);
+    showControls();
+  });
 
   el.fullscreenButton.addEventListener('click', toggleFullscreen);
   document.addEventListener('fullscreenchange', () => {
@@ -752,7 +998,9 @@ function bindEvents() {
 
   el.shortcutsButton.addEventListener('click', openShortcuts);
   el.shortcutsClose.addEventListener('click', closeShortcuts);
-  el.shortcutsModal.addEventListener('click', (e) => { if (e.target === el.shortcutsModal) closeShortcuts(); });
+  el.shortcutsModal.addEventListener('click', (e) => {
+    if (e.target === el.shortcutsModal) closeShortcuts();
+  });
 
   // Library/sign-in gate
   el.gate.addEventListener('click', (e) => {
@@ -767,22 +1015,37 @@ function bindEvents() {
 
   // Notes & bookmarks
   el.notesToggle.addEventListener('click', toggleNotes);
-  el.notesClose.addEventListener('click', () => { el.notesDrawer.hidden = true; });
+  el.notesClose.addEventListener('click', () => {
+    el.notesDrawer.hidden = true;
+  });
   el.notesExport.addEventListener('click', exportNotes);
   el.noteAdd.addEventListener('click', () => addNote('note'));
   el.noteBookmark.addEventListener('click', () => addNote('bookmark'));
-  el.noteInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); addNote('note'); } });
+  el.noteInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      addNote('note');
+    }
+  });
   el.notesList.addEventListener('click', (e) => {
     const seek = e.target.closest('[data-seek]');
-    if (seek) { seekTo(Number(seek.dataset.seek)); return; }
+    if (seek) {
+      seekTo(Number(seek.dataset.seek));
+      return;
+    }
     const del = e.target.closest('[data-del]');
     if (del) deleteNote(del.dataset.del);
   });
 
   // Transcript & captions
   el.transcriptToggle.addEventListener('click', toggleTranscript);
-  el.transcriptClose.addEventListener('click', () => { el.transcriptDrawer.hidden = true; });
-  el.transcriptSearch.addEventListener('input', () => { state.transcriptQuery = el.transcriptSearch.value.trim().toLowerCase(); renderTranscript(); });
+  el.transcriptClose.addEventListener('click', () => {
+    el.transcriptDrawer.hidden = true;
+  });
+  el.transcriptSearch.addEventListener('input', () => {
+    state.transcriptQuery = el.transcriptSearch.value.trim().toLowerCase();
+    renderTranscript();
+  });
   el.transcriptList.addEventListener('click', (e) => {
     const row = e.target.closest('[data-cue]');
     if (row) seekTo(Number(row.dataset.cue));
@@ -791,13 +1054,23 @@ function bindEvents() {
 
   // Flashcards
   el.cardsToggle.addEventListener('click', toggleCards);
-  el.cardsClose.addEventListener('click', () => { el.cardsDrawer.hidden = true; });
+  el.cardsClose.addEventListener('click', () => {
+    el.cardsDrawer.hidden = true;
+  });
   el.cardAdd.addEventListener('click', addCard);
-  el.cardFront.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); addCard(); } });
+  el.cardFront.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      addCard();
+    }
+  });
   el.cardsReviewLesson.addEventListener('click', () => startReview('lesson'));
   el.cardsList.addEventListener('click', (e) => {
     const jump = e.target.closest('[data-card-seek]');
-    if (jump) { seekTo(Number(jump.dataset.cardSeek)); return; }
+    if (jump) {
+      seekTo(Number(jump.dataset.cardSeek));
+      return;
+    }
     const del = e.target.closest('[data-del-card]');
     if (del) deleteCard(del.dataset.delCard);
   });
@@ -808,25 +1081,40 @@ function bindEvents() {
     const g = e.target.closest('[data-grade]');
     if (g) gradeCard(g.dataset.grade);
   });
-  el.reviewModal.addEventListener('click', (e) => { if (e.target === el.reviewModal) endReview(); });
+  el.reviewModal.addEventListener('click', (e) => {
+    if (e.target === el.reviewModal) endReview();
+  });
 
   // Account & admin
   el.userButton.addEventListener('click', openAccount);
   el.settingsClose.addEventListener('click', closeAccount);
-  el.settingsModal.addEventListener('click', (e) => { if (e.target === el.settingsModal) closeAccount(); });
+  el.settingsModal.addEventListener('click', (e) => {
+    if (e.target === el.settingsModal) closeAccount();
+  });
   el.signOutBtn.addEventListener('click', signOut);
   el.adminOpenBtn.addEventListener('click', openAdmin);
   el.adminClose.addEventListener('click', closeAdmin);
-  el.adminModal.addEventListener('click', (e) => { if (e.target === el.adminModal) closeAdmin(); });
+  el.adminModal.addEventListener('click', (e) => {
+    if (e.target === el.adminModal) closeAdmin();
+  });
   el.adminAddBtn.addEventListener('click', addAllowedUser);
-  el.adminAddEmail.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addAllowedUser(); } });
+  el.adminAddEmail.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addAllowedUser();
+    }
+  });
   el.adminUserList.addEventListener('click', onAdminListClick);
 
   // Dashboard
   el.homeButton.addEventListener('click', showDashboard);
   el.addGoalBtn.addEventListener('click', openGoalModal);
-  el.goalClose.addEventListener('click', () => { el.goalModal.hidden = true; });
-  el.goalModal.addEventListener('click', (e) => { if (e.target === el.goalModal) el.goalModal.hidden = true; });
+  el.goalClose.addEventListener('click', () => {
+    el.goalModal.hidden = true;
+  });
+  el.goalModal.addEventListener('click', (e) => {
+    if (e.target === el.goalModal) el.goalModal.hidden = true;
+  });
   el.goalSave.addEventListener('click', saveGoal);
   el.continueRow.addEventListener('click', (e) => {
     const card = e.target.closest('[data-video-id]');
@@ -835,7 +1123,13 @@ function bindEvents() {
   el.goalsList.addEventListener('click', async (e) => {
     const del = e.target.closest('[data-del-goal]');
     if (!del) return;
-    if (await confirmDialog({ title: 'Delete goal?', body: 'This goal will be removed. Your watch progress is not affected.', okLabel: 'Delete' })) {
+    if (
+      await confirmDialog({
+        title: 'Delete goal?',
+        body: 'This goal will be removed. Your watch progress is not affected.',
+        okLabel: 'Delete'
+      })
+    ) {
       deleteGoal(del.dataset.delGoal);
     }
   });
@@ -856,7 +1150,9 @@ function initResize() {
     e.preventDefault();
     active = true;
     el.app.classList.add('resizing');
-    try { el.resizeHandle.setPointerCapture(e.pointerId); } catch {}
+    try {
+      el.resizeHandle.setPointerCapture(e.pointerId);
+    } catch {}
   });
   el.resizeHandle.addEventListener('pointermove', (e) => {
     if (!active) return;
@@ -867,8 +1163,13 @@ function initResize() {
     if (!active) return;
     active = false;
     el.app.classList.remove('resizing');
-    try { el.resizeHandle.releasePointerCapture(e.pointerId); } catch {}
-    localStorage.setItem('lt:sidebar-width', getComputedStyle(el.app).getPropertyValue('--sidebar-width').trim());
+    try {
+      el.resizeHandle.releasePointerCapture(e.pointerId);
+    } catch {}
+    localStorage.setItem(
+      'lt:sidebar-width',
+      getComputedStyle(el.app).getPropertyValue('--sidebar-width').trim()
+    );
   };
   el.resizeHandle.addEventListener('pointerup', end);
   el.resizeHandle.addEventListener('pointercancel', end);
@@ -880,17 +1181,33 @@ function initResize() {
 
 // ── Keyboard shortcuts ───────────────────────────────────────────────────────
 function handleKeydown(e) {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (
+    e.target.tagName === 'INPUT' ||
+    e.target.tagName === 'TEXTAREA' ||
+    e.target.tagName === 'SELECT'
+  )
+    return;
 
   // Flashcard review captures keys while open.
   if (!el.reviewModal.hidden) {
-    if (e.key === 'Escape') { endReview(); return; }
+    if (e.key === 'Escape') {
+      endReview();
+      return;
+    }
     if (el.reviewGrades.hidden) {
-      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); revealAnswer(); }
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        revealAnswer();
+      }
     } else {
       const map = { 1: 'again', 2: 'hard', 3: 'good', 4: 'easy' };
-      if (map[e.key]) { e.preventDefault(); gradeCard(map[e.key]); }
-      else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); gradeCard('good'); }
+      if (map[e.key]) {
+        e.preventDefault();
+        gradeCard(map[e.key]);
+      } else if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        gradeCard('good');
+      }
     }
     return;
   }
@@ -903,25 +1220,70 @@ function handleKeydown(e) {
     else if (!el.settingsModal.hidden) closeAccount();
     return;
   }
-  if (e.key === '?') { e.preventDefault(); openShortcuts(); return; }
-  if (e.key === '[') { e.preventDefault(); setSidebarCollapsed(!el.app.classList.contains('sidebar-collapsed')); return; }
+  if (e.key === '?') {
+    e.preventDefault();
+    openShortcuts();
+    return;
+  }
+  if (e.key === '[') {
+    e.preventDefault();
+    setSidebarCollapsed(!el.app.classList.contains('sidebar-collapsed'));
+    return;
+  }
 
   if (!state.selectedVideo) return;
 
   switch (e.key) {
-    case ' ':          e.preventDefault(); togglePlayback(); break;
-    case 'ArrowLeft':  e.preventDefault(); seekRelative(-10); break;
-    case 'ArrowRight': e.preventDefault(); seekRelative(10); break;
-    case 'ArrowUp':    e.preventDefault(); changeVolume(0.1); break;
-    case 'ArrowDown':  e.preventDefault(); changeVolume(-0.1); break;
-    case 'm': case 'M': el.player.muted = !el.player.muted; updatePlayerControls(); toast(el.player.muted ? 'Muted' : 'Unmuted', 'info'); break;
-    case 'f': case 'F': e.preventDefault(); toggleFullscreen(); break;
-    case 'n': case 'N': e.preventDefault(); playAdjacent(1, true); break;
-    case 'p': case 'P': e.preventDefault(); playAdjacent(-1, true); break;
-    case 'b': case 'B':
-      if (state.selectedVideo.kind !== 'pdf') { addNote('bookmark'); toast(`Bookmarked ${formatClock(el.player.currentTime)}`, 'info', 1500); }
+    case ' ':
+      e.preventDefault();
+      togglePlayback();
       break;
-    case 'c': case 'C':
+    case 'ArrowLeft':
+      e.preventDefault();
+      seekRelative(-10);
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      seekRelative(10);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      changeVolume(0.1);
+      break;
+    case 'ArrowDown':
+      e.preventDefault();
+      changeVolume(-0.1);
+      break;
+    case 'm':
+    case 'M':
+      el.player.muted = !el.player.muted;
+      updatePlayerControls();
+      toast(el.player.muted ? 'Muted' : 'Unmuted', 'info');
+      break;
+    case 'f':
+    case 'F':
+      e.preventDefault();
+      toggleFullscreen();
+      break;
+    case 'n':
+    case 'N':
+      e.preventDefault();
+      playAdjacent(1, true);
+      break;
+    case 'p':
+    case 'P':
+      e.preventDefault();
+      playAdjacent(-1, true);
+      break;
+    case 'b':
+    case 'B':
+      if (state.selectedVideo.kind !== 'pdf') {
+        addNote('bookmark');
+        toast(`Bookmarked ${formatClock(el.player.currentTime)}`, 'info', 1500);
+      }
+      break;
+    case 'c':
+    case 'C':
       if (!el.ccButton.hidden) toggleCaptions();
       break;
   }
@@ -938,7 +1300,7 @@ function seekRelative(delta) {
 function changeVolume(delta) {
   const v = Math.max(0, Math.min(1, el.player.volume + delta));
   el.player.volume = v;
-  el.player.muted  = v === 0;
+  el.player.muted = v === 0;
   updatePlayerControls();
 }
 
@@ -977,8 +1339,13 @@ function scheduleControlsHide(ms = 3000) {
 }
 
 // ── Modals ───────────────────────────────────────────────────────────────────
-function openShortcuts()  { el.shortcutsModal.hidden = false; el.shortcutsClose.focus(); }
-function closeShortcuts() { el.shortcutsModal.hidden = true; }
+function openShortcuts() {
+  el.shortcutsModal.hidden = false;
+  el.shortcutsClose.focus();
+}
+function closeShortcuts() {
+  el.shortcutsModal.hidden = true;
+}
 
 // ── Confirm dialog ────────────────────────────────────────────────────────────
 function confirmDialog({ title = 'Are you sure?', body = '', okLabel = 'Reset' }) {
@@ -994,9 +1361,17 @@ function confirmDialog({ title = 'Are you sure?', body = '', okLabel = 'Reset' }
       el.confirmCancel.removeEventListener('click', onCancel);
       el.confirmModal.removeEventListener('click', onBackdrop);
     };
-    const onOk = () => { cleanup(); resolve(true); };
-    const onCancel = () => { cleanup(); resolve(false); };
-    const onBackdrop = (e) => { if (e.target === el.confirmModal) onCancel(); };
+    const onOk = () => {
+      cleanup();
+      resolve(true);
+    };
+    const onCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+    const onBackdrop = (e) => {
+      if (e.target === el.confirmModal) onCancel();
+    };
     el.confirmOk.addEventListener('click', onOk);
     el.confirmCancel.addEventListener('click', onCancel);
     el.confirmModal.addEventListener('click', onBackdrop);
@@ -1006,7 +1381,15 @@ function confirmDialog({ title = 'Are you sure?', body = '', okLabel = 'Reset' }
 // ── Reset progress ────────────────────────────────────────────────────────────
 async function resetProgress(payload, resetIds) {
   await db.resetProgress(resetIds).catch(() => {});
-  const cleared = { startedAt: null, lastWatchedAt: null, completedAt: null, resumeSeconds: 0, watchSeconds: 0, percent: 0, completed: false };
+  const cleared = {
+    startedAt: null,
+    lastWatchedAt: null,
+    completedAt: null,
+    resumeSeconds: 0,
+    watchSeconds: 0,
+    percent: 0,
+    completed: false
+  };
   const ids = resetIds === 'all' ? null : new Set(resetIds);
 
   // If the playing item is being reset, pause + rewind it and suppress the
@@ -1015,12 +1398,22 @@ async function resetProgress(payload, resetIds) {
   if (resettingCurrent && state.selectedVideo.kind !== 'pdf') {
     state.suppressSave = true;
     el.player.pause();
-    try { el.player.currentTime = 0; } catch {}
-    setTimeout(() => { state.suppressSave = false; }, 700);
+    try {
+      el.player.currentTime = 0;
+    } catch {}
+    setTimeout(() => {
+      state.suppressSave = false;
+    }, 700);
   }
 
-  for (const v of state.library.videos) if (!ids || ids.has(v.id)) Object.assign(v.progress, cleared);
-  const walk = (nodes) => { for (const n of nodes) { for (const v of n.videos) if (!ids || ids.has(v.id)) Object.assign(v.progress, cleared); walk(n.children || []); } };
+  for (const v of state.library.videos)
+    if (!ids || ids.has(v.id)) Object.assign(v.progress, cleared);
+  const walk = (nodes) => {
+    for (const n of nodes) {
+      for (const v of n.videos) if (!ids || ids.has(v.id)) Object.assign(v.progress, cleared);
+      walk(n.children || []);
+    }
+  };
   walk(state.library.courses || []);
   render();
 }
@@ -1105,10 +1498,17 @@ function activityFlush() {
 function activityStop() {
   activityFlush();
   state.activeSince = null;
-  if (state.activityTimer) { clearInterval(state.activityTimer); state.activityTimer = null; }
+  if (state.activityTimer) {
+    clearInterval(state.activityTimer);
+    state.activityTimer = null;
+  }
 }
 function recordActivity(extra = {}) {
-  const body = { day: localDay(new Date()), seconds: extra.seconds || 0, completed: extra.completed || 0 };
+  const body = {
+    day: localDay(new Date()),
+    seconds: extra.seconds || 0,
+    completed: extra.completed || 0
+  };
   if (!body.seconds && !body.completed) return;
   db.recordActivity(body.day, body.seconds, body.completed).catch(() => {});
   bumpLocalActivity(body);
@@ -1117,7 +1517,11 @@ function bumpLocalActivity({ seconds = 0, completed = 0 }) {
   if (!state.stats) return;
   const day = localDay(new Date());
   let rec = state.stats.activity.find((a) => a.day === day);
-  if (!rec) { rec = { day, watchSeconds: 0, completedCount: 0 }; state.stats.activity.push(rec); state.stats.activity.sort((a, b) => (a.day < b.day ? -1 : 1)); }
+  if (!rec) {
+    rec = { day, watchSeconds: 0, completedCount: 0 };
+    state.stats.activity.push(rec);
+    state.stats.activity.sort((a, b) => (a.day < b.day ? -1 : 1));
+  }
   rec.watchSeconds += seconds;
   rec.completedCount += completed;
   state.stats.lifetimeWatchSeconds = (state.stats.lifetimeWatchSeconds || 0) + seconds;
@@ -1125,51 +1529,80 @@ function bumpLocalActivity({ seconds = 0, completed = 0 }) {
 
 // ── Streak & time helpers ─────────────────────────────────────────────────────
 function studiedDays() {
-  return new Set((state.stats?.activity || []).filter((a) => a.watchSeconds > 0 || a.completedCount > 0).map((a) => a.day));
+  return new Set(
+    (state.stats?.activity || [])
+      .filter((a) => a.watchSeconds > 0 || a.completedCount > 0)
+      .map((a) => a.day)
+  );
 }
-function dayDiff(a, b) { return Math.round((Date.parse(b) - Date.parse(a)) / 86400000); }
+function dayDiff(a, b) {
+  return Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
+}
 function computeStreak() {
   const days = studiedDays();
   let current = 0;
   const d = new Date();
   if (!days.has(localDay(d))) d.setDate(d.getDate() - 1); // today not yet studied → count up to yesterday
-  while (days.has(localDay(d))) { current++; d.setDate(d.getDate() - 1); }
+  while (days.has(localDay(d))) {
+    current++;
+    d.setDate(d.getDate() - 1);
+  }
   const sorted = [...days].sort();
-  let longest = 0, run = 0, prev = null;
-  for (const day of sorted) { run = prev && dayDiff(prev, day) === 1 ? run + 1 : 1; longest = Math.max(longest, run); prev = day; }
+  let longest = 0,
+    run = 0,
+    prev = null;
+  for (const day of sorted) {
+    run = prev && dayDiff(prev, day) === 1 ? run + 1 : 1;
+    longest = Math.max(longest, run);
+    prev = day;
+  }
   return { current, longest };
 }
-function activitySecondsForDay(day) { return state.stats?.activity.find((a) => a.day === day)?.watchSeconds || 0; }
+function activitySecondsForDay(day) {
+  return state.stats?.activity.find((a) => a.day === day)?.watchSeconds || 0;
+}
 function activitySecondsLastNDays(n) {
-  const c = new Date(); c.setDate(c.getDate() - (n - 1));
+  const c = new Date();
+  c.setDate(c.getDate() - (n - 1));
   const cd = localDay(c);
-  return (state.stats?.activity || []).filter((a) => a.day >= cd).reduce((s, a) => s + a.watchSeconds, 0);
+  return (state.stats?.activity || [])
+    .filter((a) => a.day >= cd)
+    .reduce((s, a) => s + a.watchSeconds, 0);
 }
 function remainingSeconds(videos) {
-  return videos.filter((v) => !v.progress.completed && Number.isFinite(v.durationSeconds)).reduce((s, v) => {
-    const watched = v.durationSeconds * (Math.min(100, v.progress.percent || 0) / 100);
-    return s + Math.max(0, v.durationSeconds - watched);
-  }, 0);
+  return videos
+    .filter((v) => !v.progress.completed && Number.isFinite(v.durationSeconds))
+    .reduce((s, v) => {
+      const watched = v.durationSeconds * (Math.min(100, v.progress.percent || 0) / 100);
+      return s + Math.max(0, v.durationSeconds - watched);
+    }, 0);
 }
 function recentLessonsPerDay(n) {
   const cutoff = Date.now() - n * 86400000;
-  const count = (state.library?.videos || []).filter((v) => v.progress.completed && v.progress.completedAt && Date.parse(v.progress.completedAt) >= cutoff).length;
+  const count = (state.library?.videos || []).filter(
+    (v) =>
+      v.progress.completed && v.progress.completedAt && Date.parse(v.progress.completedAt) >= cutoff
+  ).length;
   return count / n;
 }
 function fmtDur(seconds) {
   const s = Math.round(seconds || 0);
   if (s <= 0) return '0m';
   if (s < 60) return '<1m';
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  const h = Math.floor(s / 3600),
+    m = Math.floor((s % 3600) / 60);
   return h ? `${h}h ${m}m` : `${m}m`;
 }
-function fmtShortDate(d) { return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+function fmtShortDate(d) {
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 // ── Dashboard rendering ───────────────────────────────────────────────────────
 function renderDashboard() {
   if (!state.library) return;
   const h = new Date().getHours();
-  el.dashGreeting.textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  el.dashGreeting.textContent =
+    h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
   renderStatTiles();
   renderContinue();
   renderFlashcards();
@@ -1189,17 +1622,31 @@ function renderStatTiles() {
   const tiles = [
     { cls: 'tile-today', icon: 'clock', value: fmtDur(today), label: 'Today' },
     { cls: 'tile-week', icon: 'trending-up', value: fmtDur(week), label: 'This week' },
-    { cls: 'tile-streak', icon: 'flame', value: `${streak.current}`, label: streak.longest > streak.current ? `Day streak · best ${streak.longest}` : 'Day streak' },
+    {
+      cls: 'tile-streak',
+      icon: 'flame',
+      value: `${streak.current}`,
+      label: streak.longest > streak.current ? `Day streak · best ${streak.longest}` : 'Day streak'
+    },
     { cls: 'tile-life', icon: 'zap', value: fmtDur(life), label: 'Lifetime' },
     { cls: 'tile-done', icon: 'circle-check', value: `${lessonsDone}`, label: 'Lessons done' },
-    { cls: 'tile-remaining', icon: 'target', value: remaining ? fmtDur(remaining) : '—', label: 'Est. time left' }
+    {
+      cls: 'tile-remaining',
+      icon: 'target',
+      value: remaining ? fmtDur(remaining) : '—',
+      label: 'Est. time left'
+    }
   ];
-  el.statTiles.innerHTML = tiles.map((t) => `
+  el.statTiles.innerHTML = tiles
+    .map(
+      (t) => `
     <div class="stat-tile ${t.cls}">
       <span class="tile-icon"><span class="icon icon-${t.icon}" aria-hidden="true"></span></span>
       <strong>${escapeHtml(t.value)}</strong>
       <span>${escapeHtml(t.label)}</span>
-    </div>`).join('');
+    </div>`
+    )
+    .join('');
 }
 
 function renderContinue() {
@@ -1207,32 +1654,40 @@ function renderContinue() {
     .filter((v) => !v.progress.completed && (v.progress.startedAt || v.progress.percent > 0))
     .sort((a, b) => (b.progress.lastWatchedAt || '').localeCompare(a.progress.lastWatchedAt || ''))
     .slice(0, 8);
-  if (!items.length) { el.continueSection.hidden = true; return; }
+  if (!items.length) {
+    el.continueSection.hidden = true;
+    return;
+  }
   el.continueSection.hidden = false;
-  el.continueRow.innerHTML = items.map((v) => {
-    const pct = Math.round(v.progress.percent || 0);
-    const resume = v.kind === 'pdf' ? 0 : resumePoint(v);
-    return `
+  el.continueRow.innerHTML = items
+    .map((v) => {
+      const pct = Math.round(v.progress.percent || 0);
+      const resume = v.kind === 'pdf' ? 0 : resumePoint(v);
+      return `
       <button class="continue-card" type="button" data-video-id="${escapeAttr(v.id)}">
         <span class="cc-course">${escapeHtml(v.hierarchy.join(' › '))}</span>
         <span class="cc-title">${escapeHtml(v.title)}</span>
         <span class="cc-bar"><span style="width:${pct}%"></span></span>
         <span class="cc-foot"><span>${pct}%</span>${resume ? `<span class="cc-resume"><span class="icon icon-play-2" aria-hidden="true"></span>${formatClock(resume)}</span>` : ''}</span>
       </button>`;
-  }).join('');
+    })
+    .join('');
 }
 
 function renderGoals() {
   const goals = state.stats?.goals || [];
   if (!goals.length) {
-    el.goalsList.innerHTML = '<div class="goals-empty">No goals yet — set one to track a course toward a deadline.</div>';
+    el.goalsList.innerHTML =
+      '<div class="goals-empty">No goals yet — set one to track a course toward a deadline.</div>';
     return;
   }
   el.goalsList.innerHTML = goals.map(renderGoalCard).join('');
 }
 
 function renderGoalCard(goal) {
-  const courses = goal.courseIds.map((id) => findNodeById(state.library.courses, id)).filter(Boolean);
+  const courses = goal.courseIds
+    .map((id) => findNodeById(state.library.courses, id))
+    .filter(Boolean);
   const vids = courses.flatMap(flattenVideos);
   const total = vids.length;
   const done = vids.filter((v) => v.progress.completed).length;
@@ -1253,16 +1708,29 @@ function renderGoalCard(goal) {
       chips.push(goalChip('', 'target', `${needPerDay}/day needed`));
       const projDays = pace > 0 ? Math.ceil(remaining / pace) : Infinity;
       if (Number.isFinite(projDays)) {
-        const proj = new Date(); proj.setDate(proj.getDate() + projDays);
+        const proj = new Date();
+        proj.setDate(proj.getDate() + projDays);
         const onTrack = projDays <= daysLeft;
-        chips.push(goalChip(onTrack ? 'ontrack' : 'behind', 'trending-up', `${onTrack ? 'On track' : 'Behind'} · ~${fmtShortDate(proj)}`));
+        chips.push(
+          goalChip(
+            onTrack ? 'ontrack' : 'behind',
+            'trending-up',
+            `${onTrack ? 'On track' : 'Behind'} · ~${fmtShortDate(proj)}`
+          )
+        );
       } else {
         chips.push(goalChip('behind', 'trending-up', 'No recent pace'));
       }
     }
     if (goal.dailyMinutes) {
       const todayMin = activitySecondsForDay(localDay(new Date())) / 60;
-      chips.push(goalChip(todayMin >= goal.dailyMinutes ? 'ontrack' : '', 'clock', `Today ${Math.round(todayMin)}/${goal.dailyMinutes}m`));
+      chips.push(
+        goalChip(
+          todayMin >= goal.dailyMinutes ? 'ontrack' : '',
+          'clock',
+          `Today ${Math.round(todayMin)}/${goal.dailyMinutes}m`
+        )
+      );
     }
   }
 
@@ -1285,19 +1753,27 @@ function goalChip(tone, icon, text) {
 
 function renderHeatmap() {
   const weeks = 20;
-  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const start = new Date(today);
   start.setDate(start.getDate() - today.getDay() - (weeks - 1) * 7); // Sunday, (weeks-1) weeks ago
   const map = new Map((state.stats?.activity || []).map((a) => [a.day, a.watchSeconds]));
   const cells = [];
-  let totalSecs = 0, activeDays = 0;
+  let totalSecs = 0,
+    activeDays = 0;
   for (let i = 0; i < weeks * 7; i++) {
-    const d = new Date(start); d.setDate(start.getDate() + i);
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
     const day = localDay(d);
     const secs = map.get(day) || 0;
     const future = d > today;
-    if (secs > 0) { totalSecs += secs; activeDays++; }
-    cells.push(`<div class="hm-cell ${future ? 'future' : levelClass(secs)}" title="${day}${secs ? ` · ${fmtDur(secs)}` : ' · no activity'}"></div>`);
+    if (secs > 0) {
+      totalSecs += secs;
+      activeDays++;
+    }
+    cells.push(
+      `<div class="hm-cell ${future ? 'future' : levelClass(secs)}" title="${day}${secs ? ` · ${fmtDur(secs)}` : ' · no activity'}"></div>`
+    );
   }
   el.heatmap.innerHTML = cells.join('');
   el.activitySub.textContent = `${activeDays} active days · ${fmtDur(totalSecs)}`;
@@ -1313,16 +1789,76 @@ function levelClass(secs) {
 
 // ── Achievements ──────────────────────────────────────────────────────────────
 const ACHIEVEMENTS = [
-  { id: 'first_lesson', icon: 'circle-check', label: 'First step', desc: 'Complete a lesson', test: (c) => c.lessonsDone >= 1 },
-  { id: 'lessons_10', icon: 'circle-check', label: 'Warming up', desc: '10 lessons done', test: (c) => c.lessonsDone >= 10 },
-  { id: 'lessons_50', icon: 'zap', label: 'On a roll', desc: '50 lessons done', test: (c) => c.lessonsDone >= 50 },
-  { id: 'first_course', icon: 'award', label: 'Course clear', desc: 'Finish a whole course', test: (c) => c.coursesDone >= 1 },
-  { id: 'streak_3', icon: 'flame', label: 'Habit forming', desc: 'Study 3 days running', test: (c) => c.streak >= 3 },
-  { id: 'streak_7', icon: 'flame', label: 'One week strong', desc: '7-day study streak', test: (c) => c.streak >= 7 },
-  { id: 'streak_30', icon: 'flame', label: 'Unstoppable', desc: '30-day study streak', test: (c) => c.streak >= 30 },
-  { id: 'hours_1', icon: 'clock', label: 'First hour', desc: '1 hour watched', test: (c) => c.hours >= 1 },
-  { id: 'hours_10', icon: 'clock', label: 'Deep work', desc: '10 hours watched', test: (c) => c.hours >= 10 },
-  { id: 'hours_50', icon: 'trending-up', label: 'Dedicated', desc: '50 hours watched', test: (c) => c.hours >= 50 }
+  {
+    id: 'first_lesson',
+    icon: 'circle-check',
+    label: 'First step',
+    desc: 'Complete a lesson',
+    test: (c) => c.lessonsDone >= 1
+  },
+  {
+    id: 'lessons_10',
+    icon: 'circle-check',
+    label: 'Warming up',
+    desc: '10 lessons done',
+    test: (c) => c.lessonsDone >= 10
+  },
+  {
+    id: 'lessons_50',
+    icon: 'zap',
+    label: 'On a roll',
+    desc: '50 lessons done',
+    test: (c) => c.lessonsDone >= 50
+  },
+  {
+    id: 'first_course',
+    icon: 'award',
+    label: 'Course clear',
+    desc: 'Finish a whole course',
+    test: (c) => c.coursesDone >= 1
+  },
+  {
+    id: 'streak_3',
+    icon: 'flame',
+    label: 'Habit forming',
+    desc: 'Study 3 days running',
+    test: (c) => c.streak >= 3
+  },
+  {
+    id: 'streak_7',
+    icon: 'flame',
+    label: 'One week strong',
+    desc: '7-day study streak',
+    test: (c) => c.streak >= 7
+  },
+  {
+    id: 'streak_30',
+    icon: 'flame',
+    label: 'Unstoppable',
+    desc: '30-day study streak',
+    test: (c) => c.streak >= 30
+  },
+  {
+    id: 'hours_1',
+    icon: 'clock',
+    label: 'First hour',
+    desc: '1 hour watched',
+    test: (c) => c.hours >= 1
+  },
+  {
+    id: 'hours_10',
+    icon: 'clock',
+    label: 'Deep work',
+    desc: '10 hours watched',
+    test: (c) => c.hours >= 10
+  },
+  {
+    id: 'hours_50',
+    icon: 'trending-up',
+    label: 'Dedicated',
+    desc: '50 hours watched',
+    test: (c) => c.hours >= 50
+  }
 ];
 
 function achievementContext() {
@@ -1349,12 +1885,14 @@ function evaluateAchievements() {
 }
 function renderBadges() {
   const earned = new Set((state.stats?.achievements || []).map((a) => a.id));
-  el.badges.innerHTML = ACHIEVEMENTS.map((a) => `
+  el.badges.innerHTML = ACHIEVEMENTS.map(
+    (a) => `
     <div class="badge ${earned.has(a.id) ? 'earned' : ''}">
       <span class="badge-ic"><span class="icon icon-${a.icon}" aria-hidden="true"></span></span>
       <strong>${escapeHtml(a.label)}</strong>
       <span>${escapeHtml(a.desc)}</span>
-    </div>`).join('');
+    </div>`
+  ).join('');
 }
 
 // ── Goal editor ───────────────────────────────────────────────────────────────
@@ -1364,12 +1902,16 @@ function openGoalModal() {
   el.goalMinutes.value = '';
   const courses = state.library?.courses || [];
   el.goalCourses.innerHTML = courses.length
-    ? courses.map((c) => `
+    ? courses
+        .map(
+          (c) => `
         <label class="course-opt">
           <input type="checkbox" value="${escapeAttr(c.id)}" />
           <span class="co-name">${escapeHtml(c.name)}</span>
           <span class="co-meta">${flattenVideos(c).length} lessons</span>
-        </label>`).join('')
+        </label>`
+        )
+        .join('')
     : '<div class="source-hint">No courses available.</div>';
   el.goalHint.textContent = 'Pick at least one course.';
   el.goalModal.hidden = false;
@@ -1377,7 +1919,10 @@ function openGoalModal() {
 }
 async function saveGoal() {
   const courseIds = [...el.goalCourses.querySelectorAll('input:checked')].map((i) => i.value);
-  if (!courseIds.length) { el.goalHint.textContent = 'Please select at least one course.'; return; }
+  if (!courseIds.length) {
+    el.goalHint.textContent = 'Please select at least one course.';
+    return;
+  }
   el.goalSave.disabled = true;
   const goal = {
     id: `goal_${Date.now().toString(36)}`,
@@ -1407,7 +1952,11 @@ function toast(message, type = 'info', duration = 3200, onClick = null) {
   const div = document.createElement('div');
   div.className = `toast ${type}${onClick ? ' clickable' : ''}`;
   div.innerHTML = `<span class="icon icon-${iconMap[type] || 'info'}" aria-hidden="true"></span><span>${escapeHtml(message)}</span>`;
-  if (onClick) div.addEventListener('click', () => { onClick(); div.remove(); });
+  if (onClick)
+    div.addEventListener('click', () => {
+      onClick();
+      div.remove();
+    });
   el.toastContainer.appendChild(div);
   setTimeout(() => {
     div.classList.add('dismissing');
@@ -1418,7 +1967,9 @@ function toast(message, type = 'info', duration = 3200, onClick = null) {
 // ── Library loading ──────────────────────────────────────────────────────────
 async function loadLibrary() {
   const [scan, progressMap, durationMap] = await Promise.all([
-    fetchServerScan(), db.getProgressMap(), db.getDurations()
+    fetchServerScan(),
+    db.getProgressMap(),
+    db.getDurations()
   ]);
   state.rootName = scan.rootName;
   const prevId = state.selectedVideo?.id;
@@ -1441,7 +1992,7 @@ function render() {
 function renderHero() {
   recomputeAggregates();
   const courses = state.library.courses || [];
-  const completed  = courses.filter(isCourseComplete).length;
+  const completed = courses.filter(isCourseComplete).length;
   const inProgress = courses.filter(isCourseInProgress).length;
 
   // Ring shows overall lesson-level progress for a satisfying, granular indicator.
@@ -1451,9 +2002,9 @@ function renderHero() {
   el.heroPercent.textContent = `${pct}%`;
   el.ringFill.style.strokeDashoffset = String(RING_CIRC * (1 - pct / 100));
 
-  el.statCourses.textContent  = courses.length;   // top-level folders only
+  el.statCourses.textContent = courses.length; // top-level folders only
   el.statProgress.textContent = inProgress;
-  el.statDone.textContent     = completed;
+  el.statDone.textContent = completed;
 }
 
 function isCourseComplete(course) {
@@ -1477,11 +2028,17 @@ function patchProgress(videoId, patch) {
 
 // Recompute each folder's rolled-up counts from current item progress (client-side, no refetch).
 function recomputeAggregates() {
-  const gather = (node, acc) => { acc.push(...node.videos); for (const c of node.children) gather(c, acc); return acc; };
+  const gather = (node, acc) => {
+    acc.push(...node.videos);
+    for (const c of node.children) gather(c, acc);
+    return acc;
+  };
   const summarize = (vids, prev) => {
     const total = vids.length;
     const completed = vids.filter((v) => v.progress.completed).length;
-    const started = vids.filter((v) => !v.progress.completed && (v.progress.startedAt || v.progress.percent > 0)).length;
+    const started = vids.filter(
+      (v) => !v.progress.completed && (v.progress.startedAt || v.progress.percent > 0)
+    ).length;
     const timed = vids.filter((v) => v.kind !== 'pdf');
     const known = timed.filter((v) => Number.isFinite(v.durationSeconds));
     return {
@@ -1508,7 +2065,9 @@ function recomputeAggregates() {
 // scan we read just the metadata of each local file (fast, no playback) to fill
 // in lengths progressively. Persisted to IndexedDB so it's a one-time cost.
 async function probeDurations() {
-  const pending = (state.library?.videos || []).filter((v) => v.kind !== 'pdf' && !Number.isFinite(v.durationSeconds) && (v._url || v._handle));
+  const pending = (state.library?.videos || []).filter(
+    (v) => v.kind !== 'pdf' && !Number.isFinite(v.durationSeconds) && (v._url || v._handle)
+  );
   if (!pending.length) return;
   const token = (state.probeToken = (state.probeToken || 0) + 1);
   let i = 0;
@@ -1537,21 +2096,49 @@ function probeOne(video) {
     probe.preload = 'metadata';
     probe.muted = true;
     let url = null;
-    const cleanup = () => { try { probe.removeAttribute('src'); probe.load(); } catch {} if (url) URL.revokeObjectURL(url); };
-    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 20000);
-    probe.addEventListener('loadedmetadata', () => {
-      clearTimeout(timer);
-      const d = probe.duration;
+    const cleanup = () => {
+      try {
+        probe.removeAttribute('src');
+        probe.load();
+      } catch {}
+      if (url) URL.revokeObjectURL(url);
+    };
+    const timer = setTimeout(() => {
       cleanup();
-      resolve(Number.isFinite(d) ? d : null);
-    }, { once: true });
-    probe.addEventListener('error', () => { clearTimeout(timer); cleanup(); reject(new Error('decode')); }, { once: true });
+      reject(new Error('timeout'));
+    }, 20000);
+    probe.addEventListener(
+      'loadedmetadata',
+      () => {
+        clearTimeout(timer);
+        const d = probe.duration;
+        cleanup();
+        resolve(Number.isFinite(d) ? d : null);
+      },
+      { once: true }
+    );
+    probe.addEventListener(
+      'error',
+      () => {
+        clearTimeout(timer);
+        cleanup();
+        reject(new Error('decode'));
+      },
+      { once: true }
+    );
     if (video._url) {
       probe.src = video._url;
     } else {
-      video._handle.getFile()
-        .then((file) => { url = URL.createObjectURL(file); probe.src = url; })
-        .catch((err) => { clearTimeout(timer); reject(err); });
+      video._handle
+        .getFile()
+        .then((file) => {
+          url = URL.createObjectURL(file);
+          probe.src = url;
+        })
+        .catch((err) => {
+          clearTimeout(timer);
+          reject(err);
+        });
     }
   });
 }
@@ -1569,7 +2156,10 @@ function refreshDurationsUI() {
 function renderCurriculum(scrollToActive = false) {
   recomputeAggregates();
   const hasCourses = (state.library?.courses?.length ?? 0) > 0;
-  const html = (state.library?.courses ?? []).map((c) => renderNode(c, 0, false)).filter(Boolean).join('');
+  const html = (state.library?.courses ?? [])
+    .map((c) => renderNode(c, 0, false))
+    .filter(Boolean)
+    .join('');
   if (html) {
     el.courseList.innerHTML = html;
     if (scrollToActive) scrollActiveLessonIntoView();
@@ -1588,13 +2178,16 @@ function renderNode(node, depth, ancestorMatches) {
   const videos = node.videos.filter(
     (v) => (selfMatches || videoMatchesQuery(v, state.query)) && videoMatchesFilter(v)
   );
-  const childrenHtml = (node.children || []).map((c) => renderNode(c, depth + 1, selfMatches)).filter(Boolean);
+  const childrenHtml = (node.children || [])
+    .map((c) => renderNode(c, depth + 1, selfMatches))
+    .filter(Boolean);
   if (!videos.length && !childrenHtml.length) return '';
 
   const expanded = shouldExpand(node);
   const progress = Math.round(node.summary.progressPercent || 0);
   const selected = nodeContainsSelectedVideo(node) ? ' selected' : '';
-  const complete = node.summary.total > 0 && node.summary.completed === node.summary.total ? ' is-complete' : '';
+  const complete =
+    node.summary.total > 0 && node.summary.completed === node.summary.total ? ' is-complete' : '';
   const hasProgress = node.summary.completed > 0 || node.summary.started > 0 ? ' has-progress' : '';
   const cls = expanded ? ' expanded' : ' collapsed';
 
@@ -1624,12 +2217,17 @@ function renderNode(node, depth, ancestorMatches) {
 }
 
 function renderLesson(video) {
-  const active   = state.selectedVideo?.id === video.id ? ' active' : '';
+  const active = state.selectedVideo?.id === video.id ? ' active' : '';
   const progress = Math.round(video.progress.percent || 0);
-  const status   = video.progress.completed ? 'done' : video.progress.startedAt ? 'watching' : 'ready';
-  const meta = video.kind === 'pdf'
-    ? 'PDF'
-    : formatDuration(video.durationSeconds, video.durationSeconds ? 0 : 1);
+  const status = video.progress.completed
+    ? 'done'
+    : video.progress.startedAt
+      ? 'watching'
+      : 'ready';
+  const meta =
+    video.kind === 'pdf'
+      ? 'PDF'
+      : formatDuration(video.durationSeconds, video.durationSeconds ? 0 : 1);
   const resume = video.kind === 'pdf' ? 0 : resumePoint(video);
   const statusText = status === 'watching' && resume ? `resume ${formatClock(resume)}` : status;
   return `
@@ -1647,7 +2245,9 @@ function renderLesson(video) {
 function scrollActiveLessonIntoView() {
   if (!state.selectedVideo) return;
   requestAnimationFrame(() => {
-    const btn = el.courseList.querySelector(`[data-video-id="${escapeAttr(state.selectedVideo.id)}"]`);
+    const btn = el.courseList.querySelector(
+      `[data-video-id="${escapeAttr(state.selectedVideo.id)}"]`
+    );
     btn?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
 }
@@ -1663,12 +2263,12 @@ function selectVideo(video, options = {}) {
   state.selectedVideo = video;
   state.selectedCourseId = video.hierarchy[0] || state.selectedCourseId;
   expandVideoPath(video);
-  state.pendingAutoplay   = options.autoplay === true;
+  state.pendingAutoplay = options.autoplay === true;
   state.isSeeking = false;
   el.playerEmpty.classList.add('hidden');
 
   const isAudio = video.kind === 'audio';
-  const isPdf   = video.kind === 'pdf';
+  const isPdf = video.kind === 'pdf';
   el.videoFrame.classList.toggle('audio-mode', isAudio);
   el.videoFrame.classList.toggle('pdf-mode', isPdf);
   el.videoFrame.classList.remove('is-playing');
@@ -1684,12 +2284,14 @@ function selectVideo(video, options = {}) {
   state.notes = [];
   renderNotes();
   updateNotesBadge();
-  db.getNotes(video.id).then((notes) => {
-    if (state.selectedVideo?.id !== video.id) return;
-    state.notes = notes;
-    renderNotes();
-    updateNotesBadge();
-  }).catch(() => {});
+  db.getNotes(video.id)
+    .then((notes) => {
+      if (state.selectedVideo?.id !== video.id) return;
+      state.notes = notes;
+      renderNotes();
+      updateNotesBadge();
+    })
+    .catch(() => {});
 
   // Transcript / captions for this lesson.
   loadTranscript(video);
@@ -1709,27 +2311,33 @@ function selectVideo(video, options = {}) {
     state.pendingResume = resumePoint(video);
   }
 
-  renderCurriculum(true);   // selecting a lesson scrolls it into view
+  renderCurriculum(true); // selecting a lesson scrolls it into view
   renderNowPlaying();
   updatePlayerControls();
 
   // Resolve the local file to a blob URL (async), guarding against fast re-selection.
   const token = (state.loadToken = (state.loadToken || 0) + 1);
-  fileURLFor(video).then((url) => {
-    if (token !== state.loadToken) { if (url.startsWith('blob:')) URL.revokeObjectURL(url); return; } // superseded
-    state.currentObjectURL = url;
-    if (isPdf) {
-      el.pdfFrame.src = `${url}#view=FitH`;
-      el.pdfOpen.href = url;
-      updatePdfToolbar();
-    } else {
-      el.player.src = url;
-      if (state.pendingResume) toast(`Resuming at ${formatClock(state.pendingResume)}`, 'info', 2200);
-      attemptPlayback();
-    }
-  }).catch(() => {
-    renderVideoStats('Could not open file');
-  });
+  fileURLFor(video)
+    .then((url) => {
+      if (token !== state.loadToken) {
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        return;
+      } // superseded
+      state.currentObjectURL = url;
+      if (isPdf) {
+        el.pdfFrame.src = `${url}#view=FitH`;
+        el.pdfOpen.href = url;
+        updatePdfToolbar();
+      } else {
+        el.player.src = url;
+        if (state.pendingResume)
+          toast(`Resuming at ${formatClock(state.pendingResume)}`, 'info', 2200);
+        attemptPlayback();
+      }
+    })
+    .catch(() => {
+      renderVideoStats('Could not open file');
+    });
 }
 
 // Seconds to resume from, or 0 to start at the beginning.
@@ -1751,7 +2359,12 @@ function updatePdfToolbar() {
 function togglePdfComplete() {
   const v = state.selectedVideo;
   if (!v || v.kind !== 'pdf' || v.progress.completed) return;
-  patchProgress(v.id, { startedAt: v.progress.startedAt || new Date().toISOString(), completed: true, percent: 100, completedAt: new Date().toISOString() });
+  patchProgress(v.id, {
+    startedAt: v.progress.startedAt || new Date().toISOString(),
+    completed: true,
+    percent: 100,
+    completedAt: new Date().toISOString()
+  });
   db.saveProgress(v.id, { ...v.progress }).catch(() => {});
   updatePdfToolbar();
   renderVideoStats();
@@ -1780,9 +2393,18 @@ function addNote(kind) {
   const v = state.selectedVideo;
   if (!v) return;
   const text = el.noteInput.value.trim();
-  if (kind === 'note' && !text) { el.noteInput.focus(); return; }
+  if (kind === 'note' && !text) {
+    el.noteInput.focus();
+    return;
+  }
   const t = Number.isFinite(el.player.currentTime) ? Math.floor(el.player.currentTime) : 0;
-  state.notes.push({ id: `n_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, t, text, kind, createdAt: new Date().toISOString() });
+  state.notes.push({
+    id: `n_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    t,
+    text,
+    kind,
+    createdAt: new Date().toISOString()
+  });
   state.notes.sort((a, b) => a.t - b.t);
   db.saveNotes(v.id, state.notes).catch(() => {});
   el.noteInput.value = '';
@@ -1800,23 +2422,36 @@ function seekTo(seconds) {
   if (!state.selectedVideo) return;
   showPlayer();
   if (state.selectedVideo.kind === 'pdf') return;
-  try { el.player.currentTime = seconds; } catch {}
-  if (el.player.paused) { state.pendingAutoplay = true; attemptPlayback(); }
+  try {
+    el.player.currentTime = seconds;
+  } catch {}
+  if (el.player.paused) {
+    state.pendingAutoplay = true;
+    attemptPlayback();
+  }
 }
 function renderNotes() {
-  if (!state.selectedVideo) { el.notesList.innerHTML = '<div class="notes-empty">Select a lesson to take notes.</div>'; return; }
-  if (!state.notes.length) {
-    el.notesList.innerHTML = '<div class="notes-empty">No notes yet.<br>Add a note at the current moment, or press <b>B</b> to bookmark.</div>';
+  if (!state.selectedVideo) {
+    el.notesList.innerHTML = '<div class="notes-empty">Select a lesson to take notes.</div>';
     return;
   }
-  el.notesList.innerHTML = state.notes.map((n) => `
+  if (!state.notes.length) {
+    el.notesList.innerHTML =
+      '<div class="notes-empty">No notes yet.<br>Add a note at the current moment, or press <b>B</b> to bookmark.</div>';
+    return;
+  }
+  el.notesList.innerHTML = state.notes
+    .map(
+      (n) => `
     <div class="note-item ${n.kind === 'bookmark' ? 'bookmark' : ''}">
       <button class="note-time" data-seek="${n.t}" title="Jump to ${formatClock(n.t)}">
         <span class="icon icon-${n.kind === 'bookmark' ? 'bookmark' : 'play-2'}" aria-hidden="true"></span>${formatClock(n.t)}
       </button>
       <div class="note-text">${escapeHtml(n.text)}</div>
       <button class="note-del" data-del="${escapeAttr(n.id)}" title="Delete" aria-label="Delete note"><span class="icon icon-trash" aria-hidden="true"></span></button>
-    </div>`).join('');
+    </div>`
+    )
+    .join('');
 }
 function updateNotesBadge() {
   const n = state.notes.length;
@@ -1826,7 +2461,10 @@ function updateNotesBadge() {
 function exportNotes() {
   const v = state.selectedVideo;
   if (!v) return;
-  if (!state.notes.length) { toast('No notes to export', 'info'); return; }
+  if (!state.notes.length) {
+    toast('No notes to export', 'info');
+    return;
+  }
   let md = `# ${v.title}\n\n_${v.hierarchy.join(' / ')}_\n\n`;
   for (const n of state.notes) {
     const label = n.kind === 'bookmark' && !n.text ? '🔖 Bookmark' : n.text;
@@ -1838,10 +2476,18 @@ function exportNotes() {
 function downloadText(name, text, type = 'text/plain') {
   const url = URL.createObjectURL(new Blob([text], { type }));
   const a = document.createElement('a');
-  a.href = url; a.download = name; a.click();
+  a.href = url;
+  a.download = name;
+  a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
-function sanitizeFilename(name) { return String(name).replace(/[\\/:*?"<>|]+/g, '_').slice(0, 120) || 'export'; }
+function sanitizeFilename(name) {
+  return (
+    String(name)
+      .replace(/[\\/:*?"<>|]+/g, '_')
+      .slice(0, 120) || 'export'
+  );
+}
 
 // ── Transcript & captions ─────────────────────────────────────────────────────
 function loadTranscript(video) {
@@ -1855,10 +2501,14 @@ function loadTranscript(video) {
   el.transcriptToggle.hidden = !has;
   el.ccButton.hidden = !(has && video.kind === 'video');
   renderTranscript();
-  if (!has) { if (!el.transcriptDrawer.hidden) el.transcriptDrawer.hidden = true; return; }
+  if (!has) {
+    if (!el.transcriptDrawer.hidden) el.transcriptDrawer.hidden = true;
+    return;
+  }
 
   const token = (state.transcriptToken = state.transcriptToken + 1);
-  fetch(video._subUrl).then((r) => r.text())
+  fetch(video._subUrl)
+    .then((r) => r.text())
     .then((text) => {
       if (token !== state.transcriptToken || state.selectedVideo?.id !== video.id) return;
       state.transcript = parseSubtitles(text);
@@ -1870,14 +2520,23 @@ function loadTranscript(video) {
 
 function setCaptions(cues, isVideo) {
   el.player.querySelectorAll('track').forEach((t) => t.remove());
-  if (state.captionsUrl) { URL.revokeObjectURL(state.captionsUrl); state.captionsUrl = null; }
+  if (state.captionsUrl) {
+    URL.revokeObjectURL(state.captionsUrl);
+    state.captionsUrl = null;
+  }
   el.ccButton.classList.toggle('cc-on', state.captionsOn);
   if (!cues || !cues.length || !isVideo) return;
   state.captionsUrl = URL.createObjectURL(new Blob([cuesToVtt(cues)], { type: 'text/vtt' }));
   const track = document.createElement('track');
-  track.kind = 'captions'; track.label = 'Captions'; track.srclang = 'en'; track.src = state.captionsUrl;
+  track.kind = 'captions';
+  track.label = 'Captions';
+  track.srclang = 'en';
+  track.src = state.captionsUrl;
   el.player.appendChild(track);
-  const apply = () => { if (el.player.textTracks[0]) el.player.textTracks[0].mode = state.captionsOn ? 'showing' : 'hidden'; };
+  const apply = () => {
+    if (el.player.textTracks[0])
+      el.player.textTracks[0].mode = state.captionsOn ? 'showing' : 'hidden';
+  };
   track.addEventListener('load', apply);
   setTimeout(apply, 120);
 }
@@ -1886,7 +2545,8 @@ function toggleCaptions() {
   state.captionsOn = !state.captionsOn;
   localStorage.setItem('lt:cc', state.captionsOn ? '1' : '0');
   el.ccButton.classList.toggle('cc-on', state.captionsOn);
-  if (el.player.textTracks[0]) el.player.textTracks[0].mode = state.captionsOn ? 'showing' : 'hidden';
+  if (el.player.textTracks[0])
+    el.player.textTracks[0].mode = state.captionsOn ? 'showing' : 'hidden';
   toast(state.captionsOn ? 'Captions on' : 'Captions off', 'info', 1400);
 }
 
@@ -1902,7 +2562,8 @@ function toggleTranscript() {
 
 function renderTranscript() {
   if (!state.selectedVideo?.hasTranscript) {
-    el.transcriptList.innerHTML = '<div class="transcript-empty">No transcript for this lesson.<br>Add a <b>.srt</b> or <b>.vtt</b> file with the same name next to the video.</div>';
+    el.transcriptList.innerHTML =
+      '<div class="transcript-empty">No transcript for this lesson.<br>Add a <b>.srt</b> or <b>.vtt</b> file with the same name next to the video.</div>';
     return;
   }
   if (!state.transcript.length) {
@@ -1917,11 +2578,15 @@ function renderTranscript() {
     el.transcriptList.innerHTML = '<div class="transcript-empty">No lines match your search.</div>';
     return;
   }
-  el.transcriptList.innerHTML = rows.map(({ c, i }) => `
+  el.transcriptList.innerHTML = rows
+    .map(
+      ({ c, i }) => `
     <button class="cue-row ${i === state.activeCueIndex ? 'active' : ''}" type="button" data-cue="${c.start}" data-i="${i}">
       <span class="cue-t">${formatClock(c.start)}</span>
       <span class="cue-text">${highlight(c.text, q)}</span>
-    </button>`).join('');
+    </button>`
+    )
+    .join('');
 }
 
 function highlight(text, q) {
@@ -1941,15 +2606,23 @@ function updateActiveCue() {
   const t = el.player.currentTime || 0;
   let idx = -1;
   for (let i = 0; i < state.transcript.length; i++) {
-    if (t >= state.transcript[i].start && t < state.transcript[i].end) { idx = i; break; }
+    if (t >= state.transcript[i].start && t < state.transcript[i].end) {
+      idx = i;
+      break;
+    }
   }
   if (idx === state.activeCueIndex) return;
   state.activeCueIndex = idx;
   if (el.transcriptDrawer.hidden) return;
   // Cheap active-class update without a full re-render.
-  el.transcriptList.querySelectorAll('.cue-row.active').forEach((r) => r.classList.remove('active'));
+  el.transcriptList
+    .querySelectorAll('.cue-row.active')
+    .forEach((r) => r.classList.remove('active'));
   const row = el.transcriptList.querySelector(`[data-i="${idx}"]`);
-  if (row) { row.classList.add('active'); scrollActiveCueIntoView(); }
+  if (row) {
+    row.classList.add('active');
+    scrollActiveCueIntoView();
+  }
 }
 function scrollActiveCueIntoView() {
   const row = el.transcriptList.querySelector('.cue-row.active');
@@ -1960,7 +2633,10 @@ function scrollActiveCueIntoView() {
 function scheduleCard(srs, rating) {
   let { interval = 0, ease = 2.5, reps = 0, lapses = 0 } = srs || {};
   if (rating === 'again') {
-    reps = 0; lapses += 1; ease = Math.max(1.3, ease - 0.2); interval = 1;
+    reps = 0;
+    lapses += 1;
+    ease = Math.max(1.3, ease - 0.2);
+    interval = 1;
   } else {
     const q = rating === 'hard' ? 3 : rating === 'good' ? 4 : 5;
     ease = Math.max(1.3, ease + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)));
@@ -1972,8 +2648,17 @@ function scheduleCard(srs, rating) {
     }
     reps += 1;
   }
-  const due = new Date(); due.setHours(0, 0, 0, 0); due.setDate(due.getDate() + interval);
-  return { interval, ease: Math.round(ease * 100) / 100, reps, lapses, due: localDay(due), lastReviewed: localDay(new Date()) };
+  const due = new Date();
+  due.setHours(0, 0, 0, 0);
+  due.setDate(due.getDate() + interval);
+  return {
+    interval,
+    ease: Math.round(ease * 100) / 100,
+    reps,
+    lapses,
+    due: localDay(due),
+    lastReviewed: localDay(new Date())
+  };
 }
 function isCardDue(card) {
   const due = card.srs?.due;
@@ -1990,13 +2675,17 @@ function loadCards(video) {
   el.cardsReviewLesson.hidden = true;
   updateCardAt();
   renderCards();
-  db.getAllCards().then((all) => {
-    state.allCards = all;
-    if (state.selectedVideo?.id !== video.id) return;
-    state.cards = all.filter((c) => c.videoId === video.id).sort((a, b) => (a.createdAt || '') < (b.createdAt || '') ? -1 : 1);
-    renderCards();
-    updateCardsBadge();
-  }).catch(() => {});
+  db.getAllCards()
+    .then((all) => {
+      state.allCards = all;
+      if (state.selectedVideo?.id !== video.id) return;
+      state.cards = all
+        .filter((c) => c.videoId === video.id)
+        .sort((a, b) => ((a.createdAt || '') < (b.createdAt || '') ? -1 : 1));
+      renderCards();
+      updateCardsBadge();
+    })
+    .catch(() => {});
 }
 function updateCardAt() {
   if (el.cardsDrawer.hidden) return;
@@ -2017,16 +2706,22 @@ function toggleCards() {
   }
 }
 function renderCards() {
-  if (!state.selectedVideo) { el.cardsList.innerHTML = '<div class="notes-empty">Select a lesson to add flashcards.</div>'; el.cardsReviewLesson.hidden = true; return; }
-  el.cardsReviewLesson.hidden = state.cards.length === 0;
-  if (!state.cards.length) {
-    el.cardsList.innerHTML = '<div class="notes-empty">No cards yet.<br>Add a question &amp; answer to study this lesson with spaced repetition.</div>';
+  if (!state.selectedVideo) {
+    el.cardsList.innerHTML = '<div class="notes-empty">Select a lesson to add flashcards.</div>';
+    el.cardsReviewLesson.hidden = true;
     return;
   }
-  el.cardsList.innerHTML = state.cards.map((c) => {
-    const dueNow = isCardDue(c);
-    const dueLabel = dueNow ? 'Due now' : `Due ${fmtShortDate(new Date(c.srs.due + 'T00:00'))}`;
-    return `
+  el.cardsReviewLesson.hidden = state.cards.length === 0;
+  if (!state.cards.length) {
+    el.cardsList.innerHTML =
+      '<div class="notes-empty">No cards yet.<br>Add a question &amp; answer to study this lesson with spaced repetition.</div>';
+    return;
+  }
+  el.cardsList.innerHTML = state.cards
+    .map((c) => {
+      const dueNow = isCardDue(c);
+      const dueLabel = dueNow ? 'Due now' : `Due ${fmtShortDate(new Date(c.srs.due + 'T00:00'))}`;
+      return `
     <div class="card-item">
       <div>
         <div class="card-front">${escapeHtml(c.front)}</div>
@@ -2038,19 +2733,31 @@ function renderCards() {
       </div>
       <button class="card-del" data-del-card="${escapeAttr(c.id)}" title="Delete card" aria-label="Delete card"><span class="icon icon-trash" aria-hidden="true"></span></button>
     </div>`;
-  }).join('');
+    })
+    .join('');
 }
 function addCard() {
   const v = state.selectedVideo;
   if (!v) return;
   const front = el.cardFront.value.trim();
   const back = el.cardBack.value.trim();
-  if (!front || !back) { (front ? el.cardBack : el.cardFront).focus(); return; }
-  const t = el.cardLinkTime.checked && Number.isFinite(el.player.currentTime) ? Math.floor(el.player.currentTime) : null;
+  if (!front || !back) {
+    (front ? el.cardBack : el.cardFront).focus();
+    return;
+  }
+  const t =
+    el.cardLinkTime.checked && Number.isFinite(el.player.currentTime)
+      ? Math.floor(el.player.currentTime)
+      : null;
   const card = {
     id: `c_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    videoId: v.id, courseId: v.hierarchy[0], lessonTitle: v.title,
-    front, back, t, createdAt: new Date().toISOString(),
+    videoId: v.id,
+    courseId: v.hierarchy[0],
+    lessonTitle: v.title,
+    front,
+    back,
+    t,
+    createdAt: new Date().toISOString(),
     srs: { interval: 0, ease: 2.5, reps: 0, lapses: 0, due: localDay(new Date()) }
   };
   db.saveCard(card).catch(() => {});
@@ -2074,8 +2781,14 @@ function deleteCard(id) {
 // ── Review session ────────────────────────────────────────────────────────────
 function startReview(scope) {
   const source = scope === 'lesson' ? state.cards : state.allCards;
-  const pool = source.filter(isCardDue).slice().sort(() => Math.random() - 0.5);
-  if (!pool.length) { toast('No cards due right now', 'info'); return; }
+  const pool = source
+    .filter(isCardDue)
+    .slice()
+    .sort(() => Math.random() - 0.5);
+  if (!pool.length) {
+    toast('No cards due right now', 'info');
+    return;
+  }
   state.review = { queue: pool, index: 0, reviewed: 0, scope };
   el.reviewModal.hidden = false;
   showReviewCard();
@@ -2083,7 +2796,10 @@ function startReview(scope) {
 function showReviewCard() {
   const r = state.review;
   if (!r) return;
-  if (r.index >= r.queue.length) { finishReview(); return; }
+  if (r.index >= r.queue.length) {
+    finishReview();
+    return;
+  }
   const c = r.queue[r.index];
   el.reviewProgress.textContent = `${r.index + 1} / ${r.queue.length}`;
   el.reviewContext.textContent = c.lessonTitle || '';
@@ -2132,7 +2848,10 @@ function endReview() {
 
 function renderFlashcards() {
   const total = state.allCards.length;
-  if (!total) { el.flashSection.hidden = true; return; }
+  if (!total) {
+    el.flashSection.hidden = true;
+    return;
+  }
   el.flashSection.hidden = false;
   const due = state.allCards.filter(isCardDue).length;
   el.flashSub.textContent = `${total} card${total === 1 ? '' : 's'}`;
@@ -2156,13 +2875,20 @@ function openAccount() {
   }
   if (el.accountAvatar) {
     const initial = (u.name || u.email || '?').trim().charAt(0).toUpperCase();
-    if (u.picture) { el.accountAvatar.style.backgroundImage = `url("${u.picture}")`; el.accountAvatar.textContent = ''; }
-    else { el.accountAvatar.style.backgroundImage = ''; el.accountAvatar.textContent = initial; }
+    if (u.picture) {
+      el.accountAvatar.style.backgroundImage = `url("${u.picture}")`;
+      el.accountAvatar.textContent = '';
+    } else {
+      el.accountAvatar.style.backgroundImage = '';
+      el.accountAvatar.textContent = initial;
+    }
   }
   if (el.adminOpenBtn) el.adminOpenBtn.hidden = u.role !== 'admin';
   el.settingsModal.hidden = false;
 }
-function closeAccount() { el.settingsModal.hidden = true; }
+function closeAccount() {
+  el.settingsModal.hidden = true;
+}
 
 // ── Admin: manage the allowlist ────────────────────────────────────────────────
 async function openAdmin() {
@@ -2173,22 +2899,34 @@ async function openAdmin() {
   el.adminUserList.innerHTML = '<div class="admin-loading"><div class="gate-spinner"></div></div>';
   await renderAdminUsers();
 }
-function closeAdmin() { el.adminModal.hidden = true; }
+function closeAdmin() {
+  el.adminModal.hidden = true;
+}
 
 async function renderAdminUsers() {
   let users;
-  try { users = await db.adminListUsers(); }
-  catch (e) { el.adminUserList.innerHTML = `<div class="admin-empty">Couldn’t load users · ${escapeHtml(e.message)}</div>`; return; }
-  if (!users.length) { el.adminUserList.innerHTML = '<div class="admin-empty">No users yet.</div>'; return; }
+  try {
+    users = await db.adminListUsers();
+  } catch (e) {
+    el.adminUserList.innerHTML = `<div class="admin-empty">Couldn’t load users · ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+  if (!users.length) {
+    el.adminUserList.innerHTML = '<div class="admin-empty">No users yet.</div>';
+    return;
+  }
   const meId = state.user?.id;
-  el.adminUserList.innerHTML = users.map((u) => {
-    const self = u.id === meId;
-    const last = u.lastLoginAt ? fmtShortDate(new Date(u.lastLoginAt)) : 'never';
-    const actions = self ? '<span class="admin-user-meta">(that’s you)</span>' : `
+  el.adminUserList.innerHTML = users
+    .map((u) => {
+      const self = u.id === meId;
+      const last = u.lastLoginAt ? fmtShortDate(new Date(u.lastLoginAt)) : 'never';
+      const actions = self
+        ? '<span class="admin-user-meta">(that’s you)</span>'
+        : `
       <button class="admin-act" data-admin-role="${u.id}" data-role="${u.role === 'admin' ? 'user' : 'admin'}">${u.role === 'admin' ? 'Make member' : 'Make admin'}</button>
       <button class="admin-act" data-admin-status="${u.id}" data-status="${u.status === 'disabled' ? 'allowed' : 'disabled'}">${u.status === 'disabled' ? 'Enable' : 'Disable'}</button>
       <button class="admin-act danger" data-admin-del="${u.id}">Remove</button>`;
-    return `
+      return `
       <div class="admin-user ${u.status === 'disabled' ? 'is-disabled' : ''}">
         <div class="admin-user-main">
           <span class="admin-user-email">${escapeHtml(u.email)}</span>
@@ -2196,13 +2934,17 @@ async function renderAdminUsers() {
         </div>
         <div class="admin-user-actions">${actions}</div>
       </div>`;
-  }).join('');
+    })
+    .join('');
 }
 
 async function addAllowedUser() {
   const email = (el.adminAddEmail.value || '').trim().toLowerCase();
   const role = el.adminAddRole?.value || 'user';
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { el.adminHint.textContent = 'Enter a valid email address.'; return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    el.adminHint.textContent = 'Enter a valid email address.';
+    return;
+  }
   el.adminAddBtn.disabled = true;
   try {
     await db.adminAddUser(email, role);
@@ -2210,8 +2952,11 @@ async function addAllowedUser() {
     el.adminHint.textContent = '';
     await renderAdminUsers();
     toast(`Added ${email}`, 'success');
-  } catch (e) { el.adminHint.textContent = e.message; }
-  finally { el.adminAddBtn.disabled = false; }
+  } catch (e) {
+    el.adminHint.textContent = e.message;
+  } finally {
+    el.adminAddBtn.disabled = false;
+  }
 }
 
 async function onAdminListClick(e) {
@@ -2231,9 +2976,15 @@ async function onAdminListClick(e) {
         body: 'They’ll lose access immediately and their saved progress will be deleted. This can’t be undone.',
         okLabel: 'Remove'
       });
-      if (ok) { await db.adminDeleteUser(delBtn.dataset.adminDel); await renderAdminUsers(); toast('User removed', 'info'); }
+      if (ok) {
+        await db.adminDeleteUser(delBtn.dataset.adminDel);
+        await renderAdminUsers();
+        toast('User removed', 'info');
+      }
     }
-  } catch (err) { toast(err.message, 'warn'); }
+  } catch (err) {
+    toast(err.message, 'warn');
+  }
 }
 
 function expandVideoPath(video) {
@@ -2258,9 +3009,17 @@ function renderNowPlaying() {
 }
 
 function renderVideoStats(extraMessage = '') {
-  if (!state.selectedVideo) { el.videoStats.innerHTML = ''; el.resetLesson.hidden = true; return; }
+  if (!state.selectedVideo) {
+    el.videoStats.innerHTML = '';
+    el.resetLesson.hidden = true;
+    return;
+  }
   const v = state.selectedVideo;
-  const status = v.progress.completed ? 'Completed' : v.progress.startedAt ? 'In progress' : 'Not started';
+  const status = v.progress.completed
+    ? 'Completed'
+    : v.progress.startedAt
+      ? 'In progress'
+      : 'Not started';
   const pills = [
     pill(status, v.progress.completed ? 'good' : v.progress.startedAt ? 'warn' : ''),
     pill(`${Math.round(v.progress.percent || 0)}%`),
@@ -2277,24 +3036,34 @@ function attemptPlayback() {
   const promise = el.player.play();
   if (!promise) return;
   promise
-    .then(() => { state.pendingAutoplay = false; updatePlayerControls(); scheduleControlsHide(); })
+    .then(() => {
+      state.pendingAutoplay = false;
+      updatePlayerControls();
+      scheduleControlsHide();
+    })
     .catch(() => {
-      if (el.player.error) { state.pendingAutoplay = false; renderVideoStats('Needs codec/transcoder'); return; }
+      if (el.player.error) {
+        state.pendingAutoplay = false;
+        renderVideoStats('Needs codec/transcoder');
+        return;
+      }
       renderVideoStats('Press play');
     });
 }
 
 function togglePlayback() {
   if (!state.selectedVideo || state.selectedVideo.kind === 'pdf') return;
-  if (el.player.paused) { state.pendingAutoplay = true; attemptPlayback(); }
-  else el.player.pause();
+  if (el.player.paused) {
+    state.pendingAutoplay = true;
+    attemptPlayback();
+  } else el.player.pause();
 }
 
 function playAdjacent(direction, autoplay) {
   const playlist = getActivePlaylist();
   if (!playlist.length) return;
   const index = playlist.findIndex((v) => v.id === state.selectedVideo?.id);
-  const next  = playlist[index + direction];
+  const next = playlist[index + direction];
   if (next) {
     selectVideo(next, { autoplay });
     if (direction === 1) toast(`Up next · ${next.title}`, 'info', 2500);
@@ -2322,24 +3091,26 @@ async function toggleFullscreen() {
 // ── Player controls update ───────────────────────────────────────────────────
 function updatePlayerControls() {
   const duration = getDuration();
-  const current  = Number.isFinite(el.player.currentTime) ? el.player.currentTime : 0;
+  const current = Number.isFinite(el.player.currentTime) ? el.player.currentTime : 0;
   updateTimeLabels(current, duration);
   updateSeekFill(current, duration);
   updateNoteAt();
   updateCardAt();
   updateActiveCue();
 
-  el.seekSlider.value = String(duration ? Math.max(0, Math.min(1000, Math.round((current / duration) * 1000))) : 0);
+  el.seekSlider.value = String(
+    duration ? Math.max(0, Math.min(1000, Math.round((current / duration) * 1000))) : 0
+  );
 
   setButtonIcon(el.playToggle, el.player.paused ? 'play' : 'pause');
   el.playToggle.setAttribute('aria-label', el.player.paused ? 'Play' : 'Pause');
   setButtonIcon(el.muteToggle, el.player.muted || el.player.volume === 0 ? 'volume-x' : 'volume-2');
   el.volumeSlider.value = String(el.player.muted ? 0 : el.player.volume);
-  el.speedSelect.value  = String(el.player.playbackRate || 1);
+  el.speedSelect.value = String(el.player.playbackRate || 1);
   updateVolumeFill();
 
   const playlist = getActivePlaylist();
-  const index    = playlist.findIndex((v) => v.id === state.selectedVideo?.id);
+  const index = playlist.findIndex((v) => v.id === state.selectedVideo?.id);
   el.prevButton.disabled = index <= 0;
   el.nextButton.disabled = index < 0 || index >= playlist.length - 1;
 }
@@ -2365,13 +3136,14 @@ function setButtonIcon(button, name) {
 }
 
 function updateTimeLabels(current, duration) {
-  el.currentTime.textContent  = formatClock(current);
+  el.currentTime.textContent = formatClock(current);
   el.durationTime.textContent = duration ? formatClock(duration) : '0:00';
 }
 
 function getDuration() {
   if (Number.isFinite(el.player.duration) && el.player.duration > 0) return el.player.duration;
-  if (Number.isFinite(state.selectedVideo?.durationSeconds)) return state.selectedVideo.durationSeconds;
+  if (Number.isFinite(state.selectedVideo?.durationSeconds))
+    return state.selectedVideo.durationSeconds;
   return 0;
 }
 
@@ -2385,17 +3157,19 @@ function saveProgress(event, options = {}) {
   video._lastProgressSaveAt = now;
 
   const durationSeconds = getDuration();
-  const resumeSeconds   = el.player.currentTime;
-  const percent         = durationSeconds ? Math.min(100, (resumeSeconds / durationSeconds) * 100) : video.progress.percent;
-  const wasCompleted    = video.progress.completed;
-  const nowIso          = new Date().toISOString();
+  const resumeSeconds = el.player.currentTime;
+  const percent = durationSeconds
+    ? Math.min(100, (resumeSeconds / durationSeconds) * 100)
+    : video.progress.percent;
+  const wasCompleted = video.progress.completed;
+  const nowIso = new Date().toISOString();
 
   const newPercent = Math.max(video.progress.percent || 0, percent || 0);
   const completed = video.progress.completed || event === 'ended' || newPercent >= 99;
   patchProgress(video.id, {
     startedAt: video.progress.startedAt || nowIso,
     lastWatchedAt: nowIso,
-    completedAt: completed ? (video.progress.completedAt || nowIso) : video.progress.completedAt,
+    completedAt: completed ? video.progress.completedAt || nowIso : video.progress.completedAt,
     resumeSeconds,
     watchSeconds: Math.max(video.progress.watchSeconds || 0, resumeSeconds),
     percent: newPercent,
@@ -2440,10 +3214,14 @@ function nodesWithMatches() {
 
 function videoMatchesFilter(v) {
   switch (state.filter) {
-    case 'done':     return v.progress.completed;
-    case 'progress': return !v.progress.completed && (Boolean(v.progress.startedAt) || v.progress.percent > 0);
-    case 'new':      return !v.progress.completed && !v.progress.startedAt && !(v.progress.percent > 0);
-    default:         return true;
+    case 'done':
+      return v.progress.completed;
+    case 'progress':
+      return !v.progress.completed && (Boolean(v.progress.startedAt) || v.progress.percent > 0);
+    case 'new':
+      return !v.progress.completed && !v.progress.startedAt && !(v.progress.percent > 0);
+    default:
+      return true;
   }
 }
 
@@ -2452,7 +3230,10 @@ function nameMatchesQuery(node, query) {
 }
 
 function videoMatchesQuery(video, query) {
-  return video.title.toLowerCase().includes(query) || video.hierarchy.join(' ').toLowerCase().includes(query);
+  return (
+    video.title.toLowerCase().includes(query) ||
+    video.hierarchy.join(' ').toLowerCase().includes(query)
+  );
 }
 
 function nodeContainsSelectedVideo(node) {
@@ -2461,7 +3242,9 @@ function nodeContainsSelectedVideo(node) {
   return state.selectedVideo.hierarchy.join('/').startsWith(nodePath);
 }
 
-function pill(text, tone = '') { return `<span class="pill ${tone}">${escapeHtml(text)}</span>`; }
+function pill(text, tone = '') {
+  return `<span class="pill ${tone}">${escapeHtml(text)}</span>`;
+}
 
 function findNodeById(nodes, id) {
   for (const node of nodes) {
@@ -2473,11 +3256,12 @@ function findNodeById(nodes, id) {
 }
 
 function formatDuration(seconds, unknownCount = 0) {
-  if (!Number.isFinite(seconds) || seconds <= 0) return unknownCount ? `${unknownCount} unknown` : '0m';
+  if (!Number.isFinite(seconds) || seconds <= 0)
+    return unknownCount ? `${unknownCount} unknown` : '0m';
   const rounded = Math.round(seconds);
-  const hours   = Math.floor(rounded / 3600);
+  const hours = Math.floor(rounded / 3600);
   const minutes = Math.floor((rounded % 3600) / 60);
-  const suffix  = unknownCount ? ` + ${unknownCount} ?` : '';
+  const suffix = unknownCount ? ` + ${unknownCount} ?` : '';
   return hours ? `${hours}h ${minutes}m${suffix}` : `${minutes}m${suffix}`;
 }
 
@@ -2486,12 +3270,19 @@ function formatClock(seconds) {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
-  return h ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`;
+  return h
+    ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+    : `${m}:${String(sec).padStart(2, '0')}`;
 }
 
 function escapeHtml(value) {
   return String(value)
-    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
-function escapeAttr(value) { return escapeHtml(value); }
+function escapeAttr(value) {
+  return escapeHtml(value);
+}

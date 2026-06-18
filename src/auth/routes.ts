@@ -16,14 +16,11 @@ authRouter.get('/google', (req, res, next) => {
 
 // OAuth callback: success → session + redirect home; denied → /?auth=denied.
 authRouter.get('/google/callback', (req, res, next) => {
-  passport.authenticate(
-    'google',
-    (err: unknown, user: SessionUser | false) => {
-      if (err) return next(err);
-      if (!user) return res.redirect('/?auth=denied');
-      req.logIn(user, (e) => (e ? next(e) : res.redirect('/')));
-    }
-  )(req, res, next);
+  passport.authenticate('google', (err: unknown, user: SessionUser | false) => {
+    if (err) return next(err);
+    if (!user) return res.redirect('/?auth=denied');
+    req.logIn(user, (e) => (e ? next(e) : res.redirect('/')));
+  })(req, res, next);
 });
 
 authRouter.post('/logout', (req, res, next) => {

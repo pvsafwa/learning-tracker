@@ -28,17 +28,17 @@ cp .env.example .env
 
 Edit `.env`:
 
-| Variable             | Required | Purpose                                                                 |
-| -------------------- | -------- | ----------------------------------------------------------------------- |
-| `DATABASE_URL`       | yes      | PostgreSQL connection string.                                           |
-| `SESSION_SECRET`     | yes      | Random string for signing session cookies. `openssl rand -hex 32`.      |
-| `APP_BASE_URL`       | yes      | Public URL, no trailing slash. Used to build the OAuth callback.        |
-| `GOOGLE_CLIENT_ID`   | yes\*    | Google OAuth client id.                                                 |
-| `GOOGLE_CLIENT_SECRET`| yes\*   | Google OAuth client secret.                                             |
-| `ADMIN_EMAILS`       | yes      | Comma-separated Google emails seeded as admins on boot.                 |
-| `COURSES_DIR`        | no       | Folder holding your course folders (default `./courses`).               |
-| `PORT` / `HOST`      | no       | Defaults `4173` / `0.0.0.0`.                                            |
-| `DEV_LOGIN_ENABLED`  | no       | `true` enables a password-less local login for testing. **Never in prod.** |
+| Variable               | Required | Purpose                                                                    |
+| ---------------------- | -------- | -------------------------------------------------------------------------- |
+| `DATABASE_URL`         | yes      | PostgreSQL connection string.                                              |
+| `SESSION_SECRET`       | yes      | Random string for signing session cookies. `openssl rand -hex 32`.         |
+| `APP_BASE_URL`         | yes      | Public URL, no trailing slash. Used to build the OAuth callback.           |
+| `GOOGLE_CLIENT_ID`     | yes\*    | Google OAuth client id.                                                    |
+| `GOOGLE_CLIENT_SECRET` | yes\*    | Google OAuth client secret.                                                |
+| `ADMIN_EMAILS`         | yes      | Comma-separated Google emails seeded as admins on boot.                    |
+| `COURSES_DIR`          | no       | Folder holding your course folders (default `./courses`).                  |
+| `PORT` / `HOST`        | no       | Defaults `4173` / `0.0.0.0`.                                               |
+| `DEV_LOGIN_ENABLED`    | no       | `true` enables a password-less local login for testing. **Never in prod.** |
 
 \* Google sign-in is disabled until both are set (handy for first local runs with `DEV_LOGIN_ENABLED=true`).
 
@@ -76,14 +76,14 @@ The emails in `ADMIN_EMAILS` become admins on boot. As an admin, click the **ava
 
 ## Scripts
 
-| Command            | What it does                                          |
-| ------------------ | ----------------------------------------------------- |
-| `npm run dev`      | Dev server (tsx watch) + auto-migrate.                |
-| `npm run build`    | Compile TypeScript → `dist/`.                         |
-| `npm start`        | Run the compiled server (`dist/server.js`).           |
-| `npm run migrate`  | Apply DB migrations (compiled). `migrate:dev` for ts. |
-| `npm test`         | Unit tests (Vitest) — no DB needed.                   |
-| `npm run lint` / `npm run typecheck` | ESLint / `tsc --noEmit`.            |
+| Command                              | What it does                                          |
+| ------------------------------------ | ----------------------------------------------------- |
+| `npm run dev`                        | Dev server (tsx watch) + auto-migrate.                |
+| `npm run build`                      | Compile TypeScript → `dist/`.                         |
+| `npm start`                          | Run the compiled server (`dist/server.js`).           |
+| `npm run migrate`                    | Apply DB migrations (compiled). `migrate:dev` for ts. |
+| `npm test`                           | Unit tests (Vitest) — no DB needed.                   |
+| `npm run lint` / `npm run typecheck` | ESLint / `tsc --noEmit`.                              |
 
 ## Project layout
 

@@ -13,8 +13,7 @@ interface UserRow {
   last_login_at: Date | null;
 }
 
-const COLS =
-  'id, email, google_sub, name, picture, role, status, created_at, last_login_at';
+const COLS = 'id, email, google_sub, name, picture, role, status, created_at, last_login_at';
 
 function toUser(r: UserRow): User {
   return {

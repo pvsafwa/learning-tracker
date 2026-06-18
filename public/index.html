@@ -7,7 +7,10 @@
     <script src="/theme-init.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css?v=15" />
   </head>
   <body>
@@ -21,16 +24,41 @@
               <p id="sourceRoot">Loading source…</p>
             </div>
             <div class="brand-actions">
-              <button class="ghost-button" id="homeButton" type="button" title="Dashboard" aria-label="Dashboard">
+              <button
+                class="ghost-button"
+                id="homeButton"
+                type="button"
+                title="Dashboard"
+                aria-label="Dashboard"
+              >
                 <span class="icon icon-dashboard" aria-hidden="true"></span>
               </button>
-              <button class="ghost-button user-button" id="userButton" type="button" title="Account" aria-label="Account" hidden>
+              <button
+                class="ghost-button user-button"
+                id="userButton"
+                type="button"
+                title="Account"
+                aria-label="Account"
+                hidden
+              >
                 <span class="user-avatar" id="userAvatar" aria-hidden="true"></span>
               </button>
-              <button class="ghost-button" id="themeToggle" type="button" title="Switch to light mode" aria-label="Switch to light mode">
+              <button
+                class="ghost-button"
+                id="themeToggle"
+                type="button"
+                title="Switch to light mode"
+                aria-label="Switch to light mode"
+              >
                 <span class="icon icon-moon" aria-hidden="true"></span>
               </button>
-              <button class="ghost-button" id="sidebarToggle" type="button" title="Hide sidebar" aria-label="Hide sidebar">
+              <button
+                class="ghost-button"
+                id="sidebarToggle"
+                type="button"
+                title="Hide sidebar"
+                aria-label="Hide sidebar"
+              >
                 <span class="icon icon-panel-left" aria-hidden="true"></span>
               </button>
             </div>
@@ -41,7 +69,7 @@
               <svg viewBox="0 0 120 120" class="progress-ring" aria-hidden="true">
                 <defs>
                   <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%"  stop-color="#ff8a3d" />
+                    <stop offset="0%" stop-color="#ff8a3d" />
                     <stop offset="55%" stop-color="#ff4d8d" />
                     <stop offset="100%" stop-color="#a855f7" />
                   </linearGradient>
@@ -75,10 +103,23 @@
 
           <div class="toolbar">
             <div class="search-wrap">
-              <span class="search-icon" aria-hidden="true"><span class="icon icon-search"></span></span>
-              <input id="searchInput" type="search" placeholder="Search courses or videos…" autocomplete="off" />
+              <span class="search-icon" aria-hidden="true"
+                ><span class="icon icon-search"></span
+              ></span>
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Search courses or videos…"
+                autocomplete="off"
+              />
             </div>
-            <button class="icon-button" id="refreshButton" type="button" title="Rescan source folder" aria-label="Rescan source folder">
+            <button
+              class="icon-button"
+              id="refreshButton"
+              type="button"
+              title="Rescan source folder"
+              aria-label="Rescan source folder"
+            >
               <span class="icon icon-refresh" aria-hidden="true"></span>
             </button>
           </div>
@@ -108,11 +149,24 @@
       </aside>
 
       <main class="player-workspace dashboard-view">
-        <div class="resize-handle" id="resizeHandle" title="Drag to resize" role="separator" aria-orientation="vertical" aria-label="Resize sidebar">
+        <div
+          class="resize-handle"
+          id="resizeHandle"
+          title="Drag to resize"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+        >
           <span class="resize-grip" aria-hidden="true"></span>
         </div>
 
-        <button class="sidebar-show" id="sidebarShow" type="button" title="Show sidebar" aria-label="Show sidebar">
+        <button
+          class="sidebar-show"
+          id="sidebarShow"
+          type="button"
+          title="Show sidebar"
+          aria-label="Show sidebar"
+        >
           <span class="icon icon-panel-left" aria-hidden="true"></span>
         </button>
 
@@ -124,18 +178,43 @@
             </div>
             <div class="meta-actions">
               <div class="video-stats" id="videoStats"></div>
-              <button class="meta-reset" id="cardsToggle" type="button" title="Flashcards" aria-label="Flashcards">
+              <button
+                class="meta-reset"
+                id="cardsToggle"
+                type="button"
+                title="Flashcards"
+                aria-label="Flashcards"
+              >
                 <span class="icon icon-layers" aria-hidden="true"></span>
                 <span class="meta-badge" id="cardsBadge" hidden>0</span>
               </button>
-              <button class="meta-reset" id="transcriptToggle" type="button" title="Transcript" aria-label="Transcript">
+              <button
+                class="meta-reset"
+                id="transcriptToggle"
+                type="button"
+                title="Transcript"
+                aria-label="Transcript"
+              >
                 <span class="icon icon-text-search" aria-hidden="true"></span>
               </button>
-              <button class="meta-reset" id="notesToggle" type="button" title="Notes & bookmarks (notes panel)" aria-label="Notes and bookmarks">
+              <button
+                class="meta-reset"
+                id="notesToggle"
+                type="button"
+                title="Notes & bookmarks (notes panel)"
+                aria-label="Notes and bookmarks"
+              >
                 <span class="icon icon-notebook" aria-hidden="true"></span>
                 <span class="meta-badge" id="notesBadge" hidden>0</span>
               </button>
-              <button class="meta-reset" id="resetLesson" type="button" hidden title="Reset progress for this lesson" aria-label="Reset progress for this lesson">
+              <button
+                class="meta-reset"
+                id="resetLesson"
+                type="button"
+                hidden
+                title="Reset progress for this lesson"
+                aria-label="Reset progress for this lesson"
+              >
                 <span class="icon icon-rotate-ccw" aria-hidden="true"></span>
               </button>
             </div>
@@ -147,7 +226,8 @@
             <div class="audio-stage" id="audioStage" aria-hidden="true">
               <div class="audio-art"><span class="icon icon-music"></span></div>
               <div class="audio-bars" aria-hidden="true">
-                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span
+                ><span></span>
               </div>
               <div class="audio-title" id="audioTitle"></div>
               <div class="audio-sub">Audio lesson</div>
@@ -156,10 +236,16 @@
             <div class="pdf-stage" id="pdfStage" aria-hidden="true">
               <iframe id="pdfFrame" title="PDF document" referrerpolicy="no-referrer"></iframe>
               <div class="pdf-toolbar">
-                <span class="pdf-label"><span class="icon icon-file-text" aria-hidden="true"></span> PDF document</span>
+                <span class="pdf-label"
+                  ><span class="icon icon-file-text" aria-hidden="true"></span> PDF document</span
+                >
                 <div class="pdf-actions">
-                  <a id="pdfOpen" class="pdf-tool-btn" target="_blank" rel="noopener">Open in new tab</a>
-                  <button id="pdfComplete" class="pdf-tool-btn primary" type="button">Mark as complete</button>
+                  <a id="pdfOpen" class="pdf-tool-btn" target="_blank" rel="noopener"
+                    >Open in new tab</a
+                  >
+                  <button id="pdfComplete" class="pdf-tool-btn primary" type="button">
+                    Mark as complete
+                  </button>
                 </div>
               </div>
             </div>
@@ -172,12 +258,25 @@
               <span>Pick a lesson from the sidebar to start learning</span>
             </div>
 
-            <div class="controls-overlay" id="controlsOverlay" role="group" aria-label="Video controls">
+            <div
+              class="controls-overlay"
+              id="controlsOverlay"
+              role="group"
+              aria-label="Video controls"
+            >
               <div class="seek-bar-wrap">
                 <div class="seek-track" id="seekTrack">
                   <div class="seek-buffer" id="seekBuffer"></div>
                   <div class="seek-fill" id="seekFill"></div>
-                  <input id="seekSlider" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek video" />
+                  <input
+                    id="seekSlider"
+                    type="range"
+                    min="0"
+                    max="1000"
+                    value="0"
+                    step="1"
+                    aria-label="Seek video"
+                  />
                   <div class="seek-tooltip" id="seekTooltip" aria-hidden="true">0:00</div>
                 </div>
                 <div class="time-row">
@@ -188,29 +287,74 @@
 
               <div class="control-row">
                 <div class="control-group">
-                  <button class="control-button" id="prevButton" type="button" title="Previous lesson (P)" aria-label="Previous lesson">
+                  <button
+                    class="control-button"
+                    id="prevButton"
+                    type="button"
+                    title="Previous lesson (P)"
+                    aria-label="Previous lesson"
+                  >
                     <span class="icon icon-skip-back" aria-hidden="true"></span>
                   </button>
-                  <button class="control-button" id="skipBackButton" type="button" title="Back 10 seconds (←)" aria-label="Skip back 10 seconds">
+                  <button
+                    class="control-button"
+                    id="skipBackButton"
+                    type="button"
+                    title="Back 10 seconds (←)"
+                    aria-label="Skip back 10 seconds"
+                  >
                     <span class="icon icon-rewind" aria-hidden="true"></span>
                   </button>
-                  <button class="play-button" id="playToggle" type="button" title="Play or pause (Space)" aria-label="Play or pause">
+                  <button
+                    class="play-button"
+                    id="playToggle"
+                    type="button"
+                    title="Play or pause (Space)"
+                    aria-label="Play or pause"
+                  >
                     <span class="icon icon-play" aria-hidden="true"></span>
                   </button>
-                  <button class="control-button" id="skipForwardButton" type="button" title="Forward 10 seconds (→)" aria-label="Skip forward 10 seconds">
+                  <button
+                    class="control-button"
+                    id="skipForwardButton"
+                    type="button"
+                    title="Forward 10 seconds (→)"
+                    aria-label="Skip forward 10 seconds"
+                  >
                     <span class="icon icon-fast-forward" aria-hidden="true"></span>
                   </button>
-                  <button class="control-button" id="nextButton" type="button" title="Next lesson (N)" aria-label="Next lesson">
+                  <button
+                    class="control-button"
+                    id="nextButton"
+                    type="button"
+                    title="Next lesson (N)"
+                    aria-label="Next lesson"
+                  >
                     <span class="icon icon-skip-forward" aria-hidden="true"></span>
                   </button>
                 </div>
 
                 <div class="control-group control-group-right">
                   <div class="volume-group">
-                    <button class="control-button" id="muteToggle" type="button" title="Mute (M)" aria-label="Mute">
+                    <button
+                      class="control-button"
+                      id="muteToggle"
+                      type="button"
+                      title="Mute (M)"
+                      aria-label="Mute"
+                    >
                       <span class="icon icon-volume-2" aria-hidden="true"></span>
                     </button>
-                    <input id="volumeSlider" class="volume-slider" type="range" min="0" max="1" value="1" step="0.01" aria-label="Volume" />
+                    <input
+                      id="volumeSlider"
+                      class="volume-slider"
+                      type="range"
+                      min="0"
+                      max="1"
+                      value="1"
+                      step="0.01"
+                      aria-label="Volume"
+                    />
                   </div>
                   <select id="speedSelect" aria-label="Playback speed" title="Playback speed">
                     <option value="0.5">0.5×</option>
@@ -221,16 +365,41 @@
                     <option value="1.75">1.75×</option>
                     <option value="2">2×</option>
                   </select>
-                  <button class="control-button" id="ccButton" type="button" title="Captions (C)" aria-label="Toggle captions" hidden>
+                  <button
+                    class="control-button"
+                    id="ccButton"
+                    type="button"
+                    title="Captions (C)"
+                    aria-label="Toggle captions"
+                    hidden
+                  >
                     <span class="icon icon-captions" aria-hidden="true"></span>
                   </button>
-                  <button class="control-button" id="pipButton" type="button" title="Picture-in-Picture" aria-label="Picture-in-Picture">
+                  <button
+                    class="control-button"
+                    id="pipButton"
+                    type="button"
+                    title="Picture-in-Picture"
+                    aria-label="Picture-in-Picture"
+                  >
                     <span class="icon icon-pip" aria-hidden="true"></span>
                   </button>
-                  <button class="control-button" id="shortcutsButton" type="button" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+                  <button
+                    class="control-button"
+                    id="shortcutsButton"
+                    type="button"
+                    title="Keyboard shortcuts (?)"
+                    aria-label="Keyboard shortcuts"
+                  >
                     <span class="icon icon-keyboard" aria-hidden="true"></span>
                   </button>
-                  <button class="control-button" id="fullscreenButton" type="button" title="Fullscreen (F)" aria-label="Fullscreen">
+                  <button
+                    class="control-button"
+                    id="fullscreenButton"
+                    type="button"
+                    title="Fullscreen (F)"
+                    aria-label="Fullscreen"
+                  >
                     <span class="icon icon-maximize" aria-hidden="true"></span>
                   </button>
                 </div>
@@ -241,22 +410,47 @@
 
         <aside class="notes-drawer" id="notesDrawer" aria-label="Notes and bookmarks" hidden>
           <div class="notes-head">
-            <h3><span class="icon icon-notebook" aria-hidden="true"></span> Notes &amp; bookmarks</h3>
+            <h3>
+              <span class="icon icon-notebook" aria-hidden="true"></span> Notes &amp; bookmarks
+            </h3>
             <div class="notes-head-actions">
-              <button class="ghost-button" id="notesExport" type="button" title="Export notes (markdown)" aria-label="Export notes">
+              <button
+                class="ghost-button"
+                id="notesExport"
+                type="button"
+                title="Export notes (markdown)"
+                aria-label="Export notes"
+              >
                 <span class="icon icon-download"></span>
               </button>
-              <button class="ghost-button" id="notesClose" type="button" title="Close" aria-label="Close notes">
+              <button
+                class="ghost-button"
+                id="notesClose"
+                type="button"
+                title="Close"
+                aria-label="Close notes"
+              >
                 <span class="icon icon-x"></span>
               </button>
             </div>
           </div>
           <div class="notes-compose">
-            <textarea id="noteInput" rows="2" placeholder="Add a note at the current time…"></textarea>
+            <textarea
+              id="noteInput"
+              rows="2"
+              placeholder="Add a note at the current time…"
+            ></textarea>
             <div class="notes-compose-row">
               <span class="note-at" id="noteAt">at 0:00</span>
               <div class="notes-compose-btns">
-                <button class="pill-button" id="noteBookmark" type="button" title="Bookmark this moment (B)"><span class="icon icon-bookmark"></span> Bookmark</button>
+                <button
+                  class="pill-button"
+                  id="noteBookmark"
+                  type="button"
+                  title="Bookmark this moment (B)"
+                >
+                  <span class="icon icon-bookmark"></span> Bookmark
+                </button>
                 <button class="primary-button" id="noteAdd" type="button">Add note</button>
               </div>
             </div>
@@ -264,18 +458,36 @@
           <div class="notes-list" id="notesList"></div>
         </aside>
 
-        <aside class="notes-drawer transcript-drawer" id="transcriptDrawer" aria-label="Transcript" hidden>
+        <aside
+          class="notes-drawer transcript-drawer"
+          id="transcriptDrawer"
+          aria-label="Transcript"
+          hidden
+        >
           <div class="notes-head">
             <h3><span class="icon icon-text-search" aria-hidden="true"></span> Transcript</h3>
             <div class="notes-head-actions">
-              <button class="ghost-button" id="transcriptClose" type="button" title="Close" aria-label="Close transcript">
+              <button
+                class="ghost-button"
+                id="transcriptClose"
+                type="button"
+                title="Close"
+                aria-label="Close transcript"
+              >
                 <span class="icon icon-x"></span>
               </button>
             </div>
           </div>
           <div class="transcript-search">
-            <span class="search-icon" aria-hidden="true"><span class="icon icon-search"></span></span>
-            <input id="transcriptSearch" type="search" placeholder="Search transcript…" autocomplete="off" />
+            <span class="search-icon" aria-hidden="true"
+              ><span class="icon icon-search"></span
+            ></span>
+            <input
+              id="transcriptSearch"
+              type="search"
+              placeholder="Search transcript…"
+              autocomplete="off"
+            />
           </div>
           <div class="transcript-list" id="transcriptList"></div>
         </aside>
@@ -284,8 +496,16 @@
           <div class="notes-head">
             <h3><span class="icon icon-layers" aria-hidden="true"></span> Flashcards</h3>
             <div class="notes-head-actions">
-              <button class="pill-button" id="cardsReviewLesson" type="button" hidden><span class="icon icon-brain"></span> Review</button>
-              <button class="ghost-button" id="cardsClose" type="button" title="Close" aria-label="Close flashcards">
+              <button class="pill-button" id="cardsReviewLesson" type="button" hidden>
+                <span class="icon icon-brain"></span> Review
+              </button>
+              <button
+                class="ghost-button"
+                id="cardsClose"
+                type="button"
+                title="Close"
+                aria-label="Close flashcards"
+              >
                 <span class="icon icon-x"></span>
               </button>
             </div>
@@ -294,7 +514,10 @@
             <input id="cardFront" type="text" placeholder="Question / prompt" autocomplete="off" />
             <textarea id="cardBack" rows="2" placeholder="Answer"></textarea>
             <div class="notes-compose-row">
-              <label class="card-link"><input type="checkbox" id="cardLinkTime" checked /> link to <span id="cardAt">0:00</span></label>
+              <label class="card-link"
+                ><input type="checkbox" id="cardLinkTime" checked /> link to
+                <span id="cardAt">0:00</span></label
+              >
               <button class="primary-button" id="cardAdd" type="button">Add card</button>
             </div>
           </div>
@@ -313,7 +536,11 @@
             <div class="stat-tiles" id="statTiles"></div>
 
             <section class="dash-section" id="continueSection" hidden>
-              <div class="dash-section-head"><h3><span class="icon icon-history" aria-hidden="true"></span> Continue watching</h3></div>
+              <div class="dash-section-head">
+                <h3>
+                  <span class="icon icon-history" aria-hidden="true"></span> Continue watching
+                </h3>
+              </div>
               <div class="continue-row" id="continueRow"></div>
             </section>
 
@@ -328,7 +555,9 @@
             <section class="dash-section">
               <div class="dash-section-head">
                 <h3><span class="icon icon-target" aria-hidden="true"></span> Goals</h3>
-                <button class="pill-button" id="addGoalBtn" type="button"><span class="icon icon-plus" aria-hidden="true"></span> New goal</button>
+                <button class="pill-button" id="addGoalBtn" type="button">
+                  <span class="icon icon-plus" aria-hidden="true"></span> New goal
+                </button>
               </div>
               <div class="goals-list" id="goalsList"></div>
             </section>
@@ -342,7 +571,9 @@
             </section>
 
             <section class="dash-section">
-              <div class="dash-section-head"><h3><span class="icon icon-award" aria-hidden="true"></span> Achievements</h3></div>
+              <div class="dash-section-head">
+                <h3><span class="icon icon-award" aria-hidden="true"></span> Achievements</h3>
+              </div>
               <div class="badges" id="badges"></div>
             </section>
           </div>
@@ -351,11 +582,20 @@
     </div>
 
     <!-- Account -->
-    <div class="modal-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-label="Account" hidden>
+    <div
+      class="modal-backdrop"
+      id="settingsModal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Account"
+      hidden
+    >
       <div class="modal">
         <div class="modal-header">
           <h3>Account</h3>
-          <button class="modal-close" id="settingsClose" type="button" aria-label="Close"><span class="icon icon-x"></span></button>
+          <button class="modal-close" id="settingsClose" type="button" aria-label="Close">
+            <span class="icon icon-x"></span>
+          </button>
         </div>
         <div class="account-body">
           <div class="account-id">
@@ -372,22 +612,42 @@
         </div>
         <div class="modal-footer">
           <span class="source-current">Your progress is saved to your account.</span>
-          <button class="primary-button danger-button" id="signOutBtn" type="button">Sign out</button>
+          <button class="primary-button danger-button" id="signOutBtn" type="button">
+            Sign out
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Admin: user allowlist -->
-    <div class="modal-backdrop" id="adminModal" role="dialog" aria-modal="true" aria-label="Manage users" hidden>
+    <div
+      class="modal-backdrop"
+      id="adminModal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Manage users"
+      hidden
+    >
       <div class="modal modal-wide">
         <div class="modal-header">
           <h3>Manage users</h3>
-          <button class="modal-close" id="adminClose" type="button" aria-label="Close"><span class="icon icon-x"></span></button>
+          <button class="modal-close" id="adminClose" type="button" aria-label="Close">
+            <span class="icon icon-x"></span>
+          </button>
         </div>
         <div class="admin-body">
-          <p class="settings-note">Only people you add here can sign in. Add the exact Google email; they'll get access the next time they sign in.</p>
+          <p class="settings-note">
+            Only people you add here can sign in. Add the exact Google email; they'll get access the
+            next time they sign in.
+          </p>
           <div class="admin-add">
-            <input id="adminAddEmail" type="email" placeholder="name@gmail.com" autocomplete="off" spellcheck="false" />
+            <input
+              id="adminAddEmail"
+              type="email"
+              placeholder="name@gmail.com"
+              autocomplete="off"
+              spellcheck="false"
+            />
             <select id="adminAddRole" aria-label="Role">
               <option value="user">Member</option>
               <option value="admin">Admin</option>
@@ -401,11 +661,20 @@
     </div>
 
     <!-- Flashcard review -->
-    <div class="modal-backdrop" id="reviewModal" role="dialog" aria-modal="true" aria-label="Flashcard review" hidden>
+    <div
+      class="modal-backdrop"
+      id="reviewModal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Flashcard review"
+      hidden
+    >
       <div class="review-card">
         <div class="review-top">
           <span class="review-progress" id="reviewProgress">1 / 1</span>
-          <button class="modal-close" id="reviewClose" type="button" aria-label="Close review"><span class="icon icon-x"></span></button>
+          <button class="modal-close" id="reviewClose" type="button" aria-label="Close review">
+            <span class="icon icon-x"></span>
+          </button>
         </div>
         <div class="review-body">
           <div class="review-context" id="reviewContext"></div>
@@ -414,12 +683,22 @@
           <div class="review-back" id="reviewBack" hidden></div>
         </div>
         <div class="review-actions">
-          <button class="primary-button review-show" id="reviewShow" type="button">Show answer <span class="kbd-hint">Space</span></button>
+          <button class="primary-button review-show" id="reviewShow" type="button">
+            Show answer <span class="kbd-hint">Space</span>
+          </button>
           <div class="review-grades" id="reviewGrades" hidden>
-            <button class="grade again" data-grade="again" type="button">Again<small id="gAgain"></small></button>
-            <button class="grade hard" data-grade="hard" type="button">Hard<small id="gHard"></small></button>
-            <button class="grade good" data-grade="good" type="button">Good<small id="gGood"></small></button>
-            <button class="grade easy" data-grade="easy" type="button">Easy<small id="gEasy"></small></button>
+            <button class="grade again" data-grade="again" type="button">
+              Again<small id="gAgain"></small>
+            </button>
+            <button class="grade hard" data-grade="hard" type="button">
+              Hard<small id="gHard"></small>
+            </button>
+            <button class="grade good" data-grade="good" type="button">
+              Good<small id="gGood"></small>
+            </button>
+            <button class="grade easy" data-grade="easy" type="button">
+              Easy<small id="gEasy"></small>
+            </button>
           </div>
         </div>
       </div>
@@ -431,7 +710,14 @@
     </div>
 
     <!-- Keyboard shortcuts modal -->
-    <div class="modal-backdrop" id="shortcutsModal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" hidden>
+    <div
+      class="modal-backdrop"
+      id="shortcutsModal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Keyboard shortcuts"
+      hidden
+    >
       <div class="modal">
         <div class="modal-header">
           <h3>Keyboard Shortcuts</h3>
@@ -458,17 +744,32 @@
       </div>
     </div>
 
-
     <!-- Goal editor -->
-    <div class="modal-backdrop" id="goalModal" role="dialog" aria-modal="true" aria-label="Set a goal" hidden>
+    <div
+      class="modal-backdrop"
+      id="goalModal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Set a goal"
+      hidden
+    >
       <div class="modal modal-wide">
         <div class="modal-header">
           <h3>Set a goal</h3>
-          <button class="modal-close" id="goalClose" type="button" aria-label="Close"><span class="icon icon-x"></span></button>
+          <button class="modal-close" id="goalClose" type="button" aria-label="Close">
+            <span class="icon icon-x"></span>
+          </button>
         </div>
         <div class="goal-form">
-          <label class="field-label" for="goalTitle">Goal name <span class="field-opt">(optional)</span></label>
-          <input id="goalTitle" type="text" autocomplete="off" placeholder="e.g. Finish DevOps fundamentals" />
+          <label class="field-label" for="goalTitle"
+            >Goal name <span class="field-opt">(optional)</span></label
+          >
+          <input
+            id="goalTitle"
+            type="text"
+            autocomplete="off"
+            placeholder="e.g. Finish DevOps fundamentals"
+          />
 
           <label class="field-label">Courses to include</label>
           <div class="course-picker" id="goalCourses"></div>
@@ -479,7 +780,9 @@
               <input id="goalDate" type="date" />
             </div>
             <div>
-              <label class="field-label" for="goalMinutes">Daily target <span class="field-opt">(minutes, optional)</span></label>
+              <label class="field-label" for="goalMinutes"
+                >Daily target <span class="field-opt">(minutes, optional)</span></label
+              >
               <input id="goalMinutes" type="number" min="0" step="5" placeholder="e.g. 30" />
             </div>
           </div>
@@ -492,7 +795,14 @@
     </div>
 
     <!-- Confirm dialog -->
-    <div class="modal-backdrop" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" hidden>
+    <div
+      class="modal-backdrop"
+      id="confirmModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirmTitle"
+      hidden
+    >
       <div class="modal modal-confirm">
         <div class="modal-header">
           <h3 id="confirmTitle">Are you sure?</h3>

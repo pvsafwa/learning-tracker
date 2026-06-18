@@ -11,7 +11,10 @@ export const libraryRouter = Router();
 libraryRouter.get(
   '/library',
   asyncHandler(async (_req, res) => {
-    const [scan, durations] = await Promise.all([scanLibrary(config.coursesDir), durationsRepo.getMap()]);
+    const [scan, durations] = await Promise.all([
+      scanLibrary(config.coursesDir),
+      durationsRepo.getMap()
+    ]);
     const items = scan.items.map((it) => ({ ...it, durationSeconds: durations[it.id] ?? null }));
     res.json({ rootName: scan.rootName, items, subs: scan.subs });
   })
