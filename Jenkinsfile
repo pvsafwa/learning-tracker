@@ -1,9 +1,12 @@
 pipeline {
     agent any
     stages {
-        stage('Hello') {
+        stage('Build image') {
             steps {
-                echo 'Pipeline is working'
+                sh '''
+                    GIT_SHA=$(git rev-parse --short HEAD)
+                    docker build -t learning-tracker:${GIT_SHA} .
+                '''
             }
         }
     }
