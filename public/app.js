@@ -3276,6 +3276,8 @@ function formatClock(seconds) {
 }
 
 function escapeHtml(value) {
+  // Reviewed: escapes the 5 standard HTML entities in the correct order (& first). Correct for escaping text into HTML.
+  // nosemgrep: javascript.audit.detect-replaceall-sanitization.detect-replaceall-sanitization
   return String(value)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
