@@ -39,12 +39,12 @@ pipeline {
                 }
                 stage('Dockerfile lint') {
                     steps {
-                        sh 'docker run --rm -i hadolint/hadolint hadolint --no-fail - < Dockerfile'
+                        sh 'docker run --rm -i hadolint/hadolint hadolint --failure-threshold warning - < Dockerfile'
                     }
                 }
                 stage('Code scan') {
                     steps {
-                        sh 'docker run --rm -v "$PWD:/src" semgrep/semgrep semgrep scan --config auto /src'
+                        sh 'docker run --rm -v "$PWD:/src" semgrep/semgrep semgrep scan --config auto --error /src'
                     }
                 }
             }
@@ -61,7 +61,7 @@ pipeline {
             steps {
                 sh '''
                     GIT_SHA=$(git rev-parse --short HEAD)
-                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image learning-tracker:${GIT_SHA}
+                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1 learning-tracker:${GIT_SHA}
                 '''
             }
         }
