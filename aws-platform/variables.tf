@@ -15,3 +15,8 @@ variable "vpc_cidr" {
   type        = string
   default     = "10.0.0.0/16"   # ~65k addresses; plenty
 }
+
+variable "my_ip_cidr" {
+  description = "Your home public IP in CIDR form (locks the Jenkins firewall to you). Find it: curl https://checkip.amazonaws.com"
+  type        = string
+}
