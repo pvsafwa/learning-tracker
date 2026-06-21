@@ -18,6 +18,15 @@ resource "aws_internet_gateway" "main" {
 }
 
 # Two PUBLIC subnets (one per AZ). 10.0.1.0/24 and 10.0.2.0/24
+#
+# RISK ACCEPTED — Semgrep IaC finding "aws-subnet-has-public-ip-address".
+# These subnets are PUBLIC by design. We deliberately run NO NAT Gateway (cost), so the Jenkins
+# controller and the k3s node must sit in a public subnet with a public IP to reach the internet.
+# Exposure is controlled by least-privilege security groups (Jenkins UI 8080 from the home IP
+# only; k3s API 6443 from the Jenkins SG only; NO SSH — shell via SSM) plus an Elastic IP.
+# Proper-prod alternative, deferred for cost: private subnets + NAT Gateway, reached via SSM/VPN.
+# Accepted & reviewed: 2026-06-21.
+# nosemgrep: terraform.aws.security.aws-subnet-has-public-ip-address.aws-subnet-has-public-ip-address
 resource "aws_subnet" "public" {
   count                   = 2
   vpc_id                  = aws_vpc.main.id
