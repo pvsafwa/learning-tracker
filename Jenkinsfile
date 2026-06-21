@@ -89,7 +89,7 @@ spec:
           steps { container('hadolint') { sh 'hadolint --failure-threshold warning Dockerfile' } }
         }
         stage('Code scan (SAST)') {
-          steps { container('semgrep') { sh 'semgrep scan --config auto --error --metrics off .' } }
+          steps { container('semgrep') { sh 'semgrep scan --config p/default --error --metrics off .' } }
         }
       }
     }
