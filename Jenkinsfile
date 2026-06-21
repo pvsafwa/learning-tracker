@@ -50,6 +50,9 @@ spec:
   environment {
     IMAGE = 'ghcr.io/pvsafwa/learning-tracker'
   }
+  triggers {
+    githubPush()
+  }
 
   options { timestamps() }
 

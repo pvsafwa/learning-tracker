@@ -33,27 +33,42 @@ resource "aws_iam_instance_profile" "jenkins" {
   role = aws_iam_role.jenkins.name
 }
 
-# ---------- The firewall: Jenkins UI from YOUR IP only, no SSH ----------
+# ---------- The firewall: NO inline rules — every rule is a standalone resource ----------
 resource "aws_security_group" "jenkins" {
   name        = "${var.project}-jenkins-sg"
   description = "Jenkins controller firewall"
   vpc_id      = aws_vpc.main.id
+  tags        = { Name = "${var.project}-jenkins-sg" }
+}
 
-  ingress {
-    description = "Jenkins web UI, my IP only"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = [var.my_ip_cidr]
-  }
-  egress {
-    description = "all outbound (plugins, GitHub, SSM, apt...)"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = { Name = "${var.project}-jenkins-sg" }
+# Jenkins web UI (8080) from your home IP only
+resource "aws_vpc_security_group_ingress_rule" "jenkins_ui_from_home" {
+  security_group_id = aws_security_group.jenkins.id
+  cidr_ipv4         = var.my_ip_cidr
+  ip_protocol       = "tcp"
+  from_port         = 8080
+  to_port           = 8080
+  description       = "Jenkins web UI, home IP only"
+}
+
+# All outbound (plugins, GitHub, SSM, apt, pulling images...)
+resource "aws_vpc_security_group_egress_rule" "jenkins_all_out" {
+  security_group_id = aws_security_group.jenkins.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"          # all protocols/ports (so no from_port/to_port)
+  description       = "all outbound"
+}
+
+# GitHub webhook delivery to /github-webhook/ on 8080
+# Source ranges from https://api.github.com/meta (.hooks). GitHub changes these rarely — re-check occasionally.
+resource "aws_vpc_security_group_ingress_rule" "jenkins_github_webhook" {
+  for_each          = toset(var.github_webhook_cidrs)
+  security_group_id = aws_security_group.jenkins.id
+  cidr_ipv4         = each.value
+  ip_protocol       = "tcp"
+  from_port         = 8080
+  to_port           = 8080
+  description       = "GitHub webhook on 8080"
 }
 
 # ---------- The Jenkins server ----------

@@ -75,10 +75,10 @@ challenged), so you can defend each choice in an interview.
     it, and tore it down. Controller executors = 0; agents carry the tools.
 
 ### What is NOT done yet
-- The **real app pipeline** isn't running on the AWS platform yet — the AWS Jenkins still needs the
-  GitHub deploy key + host-key verification + the GHCR push credential, and the `Jenkinsfile` needs
-  porting to k8s agents (a `node` container + a **Kaniko** container, replacing `agent any` /
-  `tools{nodejs}` / `docker build`).
+- ✅ **The real app pipeline now runs end-to-end on AWS** (2026-06-21): Checkout → Install → Quality
+  → Security → Build (Kaniko, daemonless) → Trivy (scan the tarball) → Push to GHCR — all on
+  ephemeral k3s pods, all gates enforcing. First image `ghcr.io/pvsafwa/learning-tracker:<short-sha>`
+  is in GHCR (the package is **private** by default). *(Webhook + deploy are still pending — below.)*
 - **Webhooks** are not turned on yet (now possible — Jenkins is publicly reachable).
 - **Nothing is deployed** to Stage/Prod yet (no app running in the k3s `stage`/`prod` namespaces).
 - **Tailscale mesh + the Lenovo Dev environment** are designed but not built.
@@ -87,9 +87,12 @@ challenged), so you can defend each choice in an interview.
   set up in GitHub.
 
 ### What we were about to do next
-**Connect the AWS Jenkins to GitHub** (deploy key + host-key + GHCR credential — same steps as
-topic 05), then **port the real `Jenkinsfile` to k8s agents** (node + Kaniko), then **turn on the
-webhook**, then **deploy to the `stage`/`prod` namespaces** on k3s.
+The CI pipeline is **green on AWS**. Next: **turn on the webhook** (`triggers { githubPush() }` + a
+GitHub webhook to `http://52.5.159.174:8080/github-webhook/` + open the Jenkins SG to GitHub's
+webhook IP ranges on 8080), then **deploy the pushed image to the `stage`/`prod` namespaces** on k3s
+(build-once-deploy-many — deploy the same `<short-sha>` tag; needs an imagePullSecret for the private
+GHCR package, or make the package public). Still to document: topics **16** (connect AWS Jenkins to
+GitHub) + **17** (CI on k3s with Kaniko/Trivy/skopeo) + an ADR for the Semgrep risk-acceptance.
 
 ### Cost reminder
 Both EC2s cost ~$0.12/hour combined while running. **Stop them when you're not practicing:**
