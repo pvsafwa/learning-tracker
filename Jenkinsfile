@@ -54,11 +54,11 @@ spec:
   options { timestamps() }
 
   stages {
-    stage('Checkout') {
+        stage('Checkout') {
       steps {
-        checkout scm                                       // checks the repo out into the shared workspace
         script {
-          env.GIT_SHA = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+          def scmVars = checkout scm                 // checkout returns a map of SCM details
+          env.GIT_SHA = scmVars.GIT_COMMIT.take(7)   // short SHA straight from Jenkins — no `git` command, no uid clash
         }
         echo "Building commit ${env.GIT_SHA}"
       }
@@ -83,7 +83,7 @@ spec:
           steps { container('node') { sh 'npm audit --omit=dev --audit-level=high' } }
         }
         stage('Secret scan') {
-          steps { container('gitleaks') { sh 'gitleaks git . --redact' } }
+          steps { container('gitleaks') { sh 'gitleaks dir . --redact' } }
         }
         stage('Dockerfile lint') {
           steps { container('hadolint') { sh 'hadolint --failure-threshold warning Dockerfile' } }

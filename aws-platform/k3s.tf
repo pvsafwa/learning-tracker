@@ -52,6 +52,10 @@ resource "aws_instance" "k3s" {
   vpc_security_group_ids = [aws_security_group.k3s.id]
   iam_instance_profile   = aws_iam_instance_profile.k3s.name
   user_data              = file("${path.module}/k3s-user-data.sh")
+  root_block_device {          # <-- ADD THIS BLOCK
+    volume_size = 40           # GB — room for k3s + CI images + Stage/Prod + Trivy DB
+    volume_type = "gp3"        # gp3 = cheaper and faster baseline than the old gp2 default
+  }
   tags                   = { Name = "${var.project}-k3s" }
 }
 
