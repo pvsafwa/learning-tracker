@@ -26,7 +26,10 @@ export function configurePassport(): void {
               name: profile.displayName ?? null,
               picture: profile.photos?.[0]?.value ?? null
             });
-            if (!user) return done(null, false, { message: 'not-allowed' });
+            if (!user) {
+              logger.warn({ email }, 'Google sign-in denied: email not on the allowlist');
+              return done(null, false, { message: 'not-allowed' });
+            }
             return done(null, toSessionUser(user));
           } catch (err) {
             return done(err as Error);

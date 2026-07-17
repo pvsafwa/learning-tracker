@@ -11,7 +11,14 @@ export const authRouter = Router();
 // Kick off the Google OAuth flow.
 authRouter.get('/google', (req, res, next) => {
   if (!config.google.configured) return res.redirect('/?auth=unconfigured');
-  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+  // Force the account chooser — without this, Google silently reuses whatever
+  // Google session is already active in the browser, which can pick the wrong
+  // account if the user is signed into more than one.
+  passport.authenticate('google', { scope: ['profile', 'email'], prompt: 'select_account' })(
+    req,
+    res,
+    next
+  );
 });
 
 // OAuth callback: success → session + redirect home; denied → /?auth=denied.
