@@ -12,7 +12,6 @@ import { authRouter } from './auth/routes';
 import { requireAuth } from './middleware/auth';
 import { errorHandler, notFound } from './middleware/error';
 import { meRouter } from './routes/me';
-import { libraryRouter } from './routes/library';
 import { progressRouter } from './routes/progress';
 import { notesRouter } from './routes/notes';
 import { cardsRouter } from './routes/cards';
@@ -71,7 +70,7 @@ export function createApp() {
       cookie: {
         httpOnly: true,
         sameSite: 'lax',
-        secure: config.isProd,
+        secure: config.cookieSecure,
         maxAge: 1000 * 60 * 60 * 24 * 30 // 30 days
       }
     })
@@ -98,7 +97,6 @@ export function createApp() {
   const api = express.Router();
   api.use(meRouter); // /api/me is reachable without a session
   api.use(requireAuth); // everything below requires one
-  api.use(libraryRouter);
   api.use(progressRouter);
   api.use(notesRouter);
   api.use(cardsRouter);

@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import { resolve } from 'node:path';
 import { z } from 'zod';
 
 // 12-factor config: everything comes from the environment, validated once at boot.
@@ -15,13 +14,15 @@ const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4173),
   APP_BASE_URL: z.string().url().default('http://localhost:4173'),
-  SESSION_SECRET: z.string().min(1).default('dev-insecure-secret-change-me'),
-  COURSES_DIR: z.string().default('./courses'),
+  SESSION_SECRET: z.string().min(32).optional(),
   DATABASE_URL: z.string().min(1),
   GOOGLE_CLIENT_ID: z.string().optional().default(''),
   GOOGLE_CLIENT_SECRET: z.string().optional().default(''),
   ADMIN_EMAILS: z.string().optional().default(''),
-  DEV_LOGIN_ENABLED: bool(false)
+  DEV_LOGIN_ENABLED: bool(false),
+  // Set true once the site is served over HTTPS. Defaults to NODE_ENV==='production'
+  // so prod stays safe by default, but lets a local prod-mode stack run over plain HTTP.
+  COOKIE_SECURE: z.string().optional()
 });
 
 const parsed = schema.safeParse(process.env);
@@ -33,14 +34,23 @@ if (!parsed.success) {
 const env = parsed.data;
 const isProd = env.NODE_ENV === 'production';
 
+// Secrets get no defaults in production — fail fast instead of running insecure.
+const sessionSecret = env.SESSION_SECRET ?? (isProd ? null : 'dev-insecure-secret-change-me');
+if (!sessionSecret) {
+  console.error(
+    'SESSION_SECRET is required in production (>= 32 chars). Generate: openssl rand -hex 32'
+  );
+  process.exit(1);
+}
+
 export const config = {
   env: env.NODE_ENV,
   isProd,
   port: env.PORT,
   appBaseUrl: env.APP_BASE_URL.replace(/\/$/, ''),
-  sessionSecret: env.SESSION_SECRET,
-  // Always absolute so path-containment checks compare like-for-like.
-  coursesDir: resolve(env.COURSES_DIR),
+  sessionSecret,
+  cookieSecure:
+    env.COOKIE_SECURE == null ? isProd : env.COOKIE_SECURE === 'true' || env.COOKIE_SECURE === '1',
   databaseUrl: env.DATABASE_URL,
   google: {
     clientId: env.GOOGLE_CLIENT_ID,

@@ -3,7 +3,6 @@ dist
 .git
 .gitignore
 .data
-courses
 coverage
 *.log
 npm-debug.log*
@@ -13,7 +12,8 @@ npm-debug.log*
 .DS_Store
 Dockerfile
 docker-compose.yml
+docker-compose.prod.yml
 README.md
+DEPLOY.md
 tests
-Jenkinsfile
 CLAUDE.md

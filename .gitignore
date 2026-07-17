@@ -10,9 +10,10 @@ npm-debug.log*
 .env.*
 !.env.example
 
-# Course media lives on the server, not in git.
-courses/*
-!courses/README.txt
+# SSH private keys
+*.pem
+*.key
+
 CLAUDE.md
 .claude/
 

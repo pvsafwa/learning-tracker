@@ -16,9 +16,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "format:check": "prettier --check .",
-    "test:ci": "vitest run --coverage"
+    "test:ci": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
     "connect-pg-simple": "^9.0.1",

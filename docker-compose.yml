@@ -1,47 +1,59 @@
-# Local multi-tier stack: PostgreSQL (data tier) + the Node API/app tier.
-# Usage:
-#   cp .env.example .env   # fill in values (or rely on the defaults below)
-#   docker compose up --build
-# Then open http://localhost:4173
+# Learning Tracker — full stack for a single host:
+#   web (nginx, TLS/proxy) → app (Node: API + SPA) → db (Postgres)
+# Course media stays on each user's own computer (picked in the browser) —
+# the server never touches it.
+#   cp .env.example .env   # fill in
+#   docker compose up -d --build
 
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: lt
-      POSTGRES_PASSWORD: lt_password
-      POSTGRES_DB: learning_tracker
+      POSTGRES_USER: ${POSTGRES_USER:-lt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-learning_tracker}
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - dbdata:/var/lib/postgresql/data
     ports:
-      - '5432:5432'
+      # Loopback-only: lets `npm run dev` on the host reach this DB without
+      # exposing Postgres to the LAN (see docker-compose.prod.yml note below).
+      - '127.0.0.1:5432:5432'
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U lt -d learning_tracker']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-lt} -d ${POSTGRES_DB:-learning_tracker}']
       interval: 5s
-      timeout: 3s
+      timeout: 5s
       retries: 10
 
   app:
     build: .
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 4173
-      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:4173}
-      SESSION_SECRET: ${SESSION_SECRET:-dev-insecure-change-me}
-      DATABASE_URL: postgres://lt:lt_password@db:5432/learning_tracker
-      COURSES_DIR: /courses
+      APP_BASE_URL: ${APP_BASE_URL:?set APP_BASE_URL in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      DATABASE_URL: postgres://${POSTGRES_USER:-lt}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-learning_tracker}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       DEV_LOGIN_ENABLED: ${DEV_LOGIN_ENABLED:-false}
+    expose:
+      - '4173'
+
+  web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
     volumes:
-      # Mount your course media read-only into the container.
-      - ${COURSES_DIR:-./courses}:/courses:ro
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
-      - '4173:4173'
+      - '${WEB_PORT:-8080}:80'
 
 volumes:
-  db-data:
+  dbdata:

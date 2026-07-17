@@ -121,6 +121,7 @@ const el = {
   confirmCancel: document.querySelector('#confirmCancel'),
   // Dashboard
   homeButton: document.querySelector('#homeButton'),
+  folderButton: document.querySelector('#folderButton'),
   playerWorkspace: document.querySelector('.player-workspace'),
   dashboard: document.querySelector('#dashboard'),
   dashGreeting: document.querySelector('#dashGreeting'),
@@ -241,7 +242,7 @@ async function boot() {
   }
   state.user = me.user;
   updateUserUI();
-  await loadServerLibrary();
+  await restoreFolderOnLoad();
 }
 
 function showSignIn() {
@@ -306,10 +307,47 @@ function updateUserUI() {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DATA LAYER (presentation tier → application tier)
-// The server hosts the course files (listed via /api/library, streamed via
-// /api/file) AND every user's progress (in PostgreSQL). The browser keeps no
-// progress locally — it talks to the REST API, carrying the session cookie.
+// Course files live on the USER's own machine (read via the File System Access
+// API — nothing is uploaded). Every user's progress lives in the server's
+// PostgreSQL. The browser keeps no progress locally — it talks to the REST
+// API, carrying the session cookie.
 // ═══════════════════════════════════════════════════════════════════════════
+
+// ── Folder-handle persistence (IndexedDB) ────────────────────────────────────
+// Only the picked folder HANDLE is stored in the browser. All tracking data
+// lives on the server. FileSystemDirectoryHandle is structured-cloneable, so
+// IndexedDB can store it and return it on the next visit.
+function openHandleDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('lt-handles', 1);
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains('handles')) req.result.createObjectStore('handles');
+    };
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+function getSavedHandle() {
+  return openHandleDB().then(
+    (idb) =>
+      new Promise((res, rej) => {
+        const r = idb.transaction('handles', 'readonly').objectStore('handles').get('root');
+        r.onsuccess = () => res(r.result || null);
+        r.onerror = () => rej(r.error);
+      })
+  );
+}
+function saveHandle(h) {
+  return openHandleDB().then(
+    (idb) =>
+      new Promise((res, rej) => {
+        const tx = idb.transaction('handles', 'readwrite');
+        tx.objectStore('handles').put(h, 'root');
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+      })
+  );
+}
 
 async function api(path, opts = {}) {
   const init = { credentials: 'same-origin', ...opts };
@@ -505,9 +543,6 @@ function cuesToVtt(cues) {
   for (const c of cues) out += `${fmt(c.start)} --> ${fmt(c.end)}\n${c.text}\n\n`;
   return out;
 }
-function splitRelPath(p) {
-  return p.split(/[\\/]+/).filter(Boolean);
-}
 function emptyProgress() {
   return {
     startedAt: null,
@@ -530,19 +565,81 @@ function hashId(str) {
   return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
 }
 
-// ── Course library (served by this app's own server) ──────────────────────────
-// The course folders live on the server; the browser lists them via /api/library
-// and streams each file via /api/file. Per-user progress still lives in this
-// browser (IndexedDB), so everyone who opens the URL gets their own tracking.
-async function loadServerLibrary(isRescan = false) {
-  state.serverMode = true;
-  if (!isRescan) showGate('scanning', 'the courses folder');
+// ── Course folder (File System Access API) ────────────────────────────────────
+// Course files live on the USER's machine; the browser reads them directly and
+// nothing is uploaded. Only progress/notes/cards (tiny JSON) go to the server,
+// keyed by hashId(relative path) — so the same folder layout on any machine
+// maps to the same progress.
+async function restoreFolderOnLoad() {
+  if (!window.showDirectoryPicker) {
+    showGate('unsupported');
+    return;
+  }
+  let handle = null;
+  try {
+    handle = await getSavedHandle();
+  } catch {}
+  if (!handle) {
+    showGate('welcome');
+    return;
+  }
+  let perm = 'prompt';
+  try {
+    perm = await handle.queryPermission({ mode: 'read' });
+  } catch {}
+  if (perm === 'granted') {
+    await loadFromHandle(handle);
+    return;
+  }
+  state.pendingHandle = handle;
+  showGate('reconnect', handle.name);
+}
+
+async function pickFolder() {
+  if (!window.showDirectoryPicker) {
+    showGate('unsupported');
+    return;
+  }
+  let handle;
+  try {
+    handle = await window.showDirectoryPicker({ id: 'lt-courses', mode: 'read' });
+  } catch {
+    return; // user cancelled the picker
+  }
+  try {
+    await saveHandle(handle);
+  } catch {}
+  await loadFromHandle(handle);
+}
+
+async function reconnectFolder() {
+  const handle = state.pendingHandle;
+  if (!handle) {
+    pickFolder();
+    return;
+  }
+  let perm = 'denied';
+  try {
+    perm = await handle.requestPermission({ mode: 'read' });
+  } catch {}
+  if (perm === 'granted') {
+    state.pendingHandle = null;
+    await loadFromHandle(handle);
+  } else {
+    toast('Folder access was not granted', 'warn');
+  }
+}
+
+async function loadFromHandle(handle, isRescan = false) {
+  state.dirHandle = handle;
+  state.rootName = handle.name;
+  if (!isRescan) showGate('scanning', handle.name);
   try {
     await loadLibrary();
     await loadStats();
-    el.sourceRoot.textContent = state.rootName;
+    el.sourceRoot.textContent = handle.name;
     if (!state.library.courses.length && !state.library.videos.length) {
-      showGate('empty', state.rootName || 'the courses folder');
+      showGate('empty', handle.name);
       return;
     }
     hideGate();
@@ -550,41 +647,35 @@ async function loadServerLibrary(isRescan = false) {
     if (!isRescan) showDashboard();
   } catch (error) {
     console.error(error);
-    showGate('error', state.rootName || 'the server');
+    showGate('error', handle.name);
   }
 }
 
-// The folder lives on the server now, so the gate's "rescan" button just reloads.
-async function pickFolder() {
-  await loadServerLibrary(true);
-}
-
-function fileUrl(relPath) {
-  return `/api/file?path=${encodeURIComponent(relPath)}`;
-}
-
-// Fetch the server's library listing and normalise it into buildLibrary's shape.
-async function fetchServerScan() {
-  const res = await fetch('/api/library', { cache: 'no-store' });
-  if (!res.ok) throw new Error(`library ${res.status}`);
-  const data = await res.json();
-  const raw = (data.items || []).map((it) => ({
-    name: it.name,
-    ext: it.ext,
-    relParts: splitRelPath(it.relPath),
-    url: fileUrl(it.relPath)
-  }));
-  const subs = (data.subs || []).map((s) => ({
-    name: s.name,
-    ext: s.ext,
-    dir: s.dir,
-    url: fileUrl(s.relPath)
-  }));
-  return { rootName: data.rootName || 'Courses', raw, subs };
+async function scanHandle(dirHandle) {
+  const raw = [];
+  const subs = [];
+  async function walk(handle, parts) {
+    for await (const entry of handle.values()) {
+      if (entry.name.startsWith('.')) continue;
+      if (entry.kind === 'directory') {
+        await walk(entry, [...parts, entry.name]);
+      } else if (entry.kind === 'file') {
+        const ext = extOf(entry.name);
+        if (isMediaExt(ext)) {
+          raw.push({ name: entry.name, ext, relParts: [...parts, entry.name], handle: entry });
+        } else if (SUBTITLE_EXTS.has(ext)) {
+          subs.push({ name: entry.name, ext, dir: parts.join('/'), handle: entry });
+        }
+      }
+    }
+  }
+  await walk(dirHandle, []);
+  return { raw, subs };
 }
 
 async function fileURLFor(video) {
-  return video._url; // server-streamed file (/api/file?path=…)
+  const file = await video._handle.getFile();
+  return URL.createObjectURL(file);
 }
 
 // ── Library building (client-side) ────────────────────────────────────────────
@@ -622,10 +713,8 @@ function buildLibrary(raw, rootName, progressMap, durationMap, subs = []) {
       durationSource: dur != null ? 'browser' : null,
       progress: stored ? { ...emptyProgress(), ...stored } : emptyProgress(),
       hasTranscript: Boolean(sub),
-      _handle: f.handle || null,
-      _url: f.url || null,
-      _subHandle: sub ? sub.handle || null : null,
-      _subUrl: sub ? sub.url || null : null
+      _handle: f.handle,
+      _subHandle: sub ? sub.handle : null
     };
   });
   videos.sort((a, b) =>
@@ -740,19 +829,30 @@ function showGate(kind, name = '') {
     body = `${mark}<h2>Learning Tracker</h2>
       <p>Sign in to track your progress. Access is invite-only — your email must be added by an admin.</p>
       ${note}${google}${dev}`;
+  } else if (kind === 'unsupported') {
+    body = `${mark}<h2>Open in Chrome or Edge</h2>
+      <p>This app reads your course folder right in the browser, which needs the File System Access API — available in <strong>Chrome, Edge, Arc or Brave</strong>. Safari and Firefox aren't supported yet.</p>`;
+  } else if (kind === 'welcome') {
+    body = `${mark}<h2>Choose your courses folder</h2>
+      <p>Pick the folder on this computer that holds your course folders. Your files stay on your device — nothing is uploaded. Only your progress syncs to your account.</p>
+      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-folder"></span> Choose courses folder</button>`;
+  } else if (kind === 'reconnect') {
+    body = `${mark}<h2>Welcome back</h2>
+      <p>Reconnect <strong>${escapeHtml(name)}</strong> to continue. Your browser asks permission again each session for your security.</p>
+      <button class="primary-button gate-btn" data-gate="reconnect"><span class="icon icon-folder"></span> Reconnect “${escapeHtml(name)}”</button>
+      <button class="gate-link" data-gate="pick">Choose a different folder</button>`;
   } else if (kind === 'scanning') {
-    body = `${mark}<h2>Loading your library…</h2>
-      <p>Reading <strong>${escapeHtml(name || state.rootName || 'the courses folder')}</strong> on the server.</p>
+    body = `${mark}<h2>Scanning…</h2>
+      <p>Reading <strong>${escapeHtml(name || state.rootName || 'your folder')}</strong> on this device.</p>
       <div class="gate-spinner"></div>`;
   } else if (kind === 'empty') {
-    body = `${mark}<h2>No courses found</h2>
-      <p>The server didn't find any video, audio or PDF files in <strong>${escapeHtml(name)}</strong>.</p>
-      <p class="gate-hint">Add your course folders to the server's courses directory (or start it with <code>COURSES_DIR=/path/to/courses</code>), then rescan.</p>
-      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-refresh"></span> Rescan</button>`;
+    body = `${mark}<h2>No media found</h2>
+      <p>No video, audio or PDF files were found in <strong>${escapeHtml(name)}</strong>.</p>
+      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-folder"></span> Choose another folder</button>`;
   } else {
-    body = `${mark}<h2>Couldn't load the library</h2>
-      <p>The app couldn't reach the server to list <strong>${escapeHtml(name)}</strong>. Check that the server is running, then retry.</p>
-      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-refresh"></span> Retry</button>`;
+    body = `${mark}<h2>Couldn't open that folder</h2>
+      <p>Something went wrong reading <strong>${escapeHtml(name)}</strong>.</p>
+      <button class="primary-button gate-btn" data-gate="pick"><span class="icon icon-folder"></span> Choose a folder</button>`;
   }
   el.gateCard.innerHTML = body;
 }
@@ -787,7 +887,7 @@ function bindEvents() {
   el.refreshButton.addEventListener('click', async () => {
     el.refreshButton.disabled = true;
     el.refreshButton.classList.add('spinning');
-    await loadServerLibrary(true);
+    if (state.dirHandle) await loadFromHandle(state.dirHandle, true);
     if (state.view === 'dashboard') renderDashboard();
     el.refreshButton.disabled = false;
     el.refreshButton.classList.remove('spinning');
@@ -1006,6 +1106,7 @@ function bindEvents() {
   el.gate.addEventListener('click', (e) => {
     const action = e.target.closest('[data-gate]')?.dataset.gate;
     if (action === 'pick') pickFolder();
+    else if (action === 'reconnect') reconnectFolder();
     else if (action === 'devlogin') devLogin();
   });
 
@@ -1108,6 +1209,7 @@ function bindEvents() {
 
   // Dashboard
   el.homeButton.addEventListener('click', showDashboard);
+  el.folderButton.addEventListener('click', pickFolder);
   el.addGoalBtn.addEventListener('click', openGoalModal);
   el.goalClose.addEventListener('click', () => {
     el.goalModal.hidden = true;
@@ -1967,11 +2069,11 @@ function toast(message, type = 'info', duration = 3200, onClick = null) {
 // ── Library loading ──────────────────────────────────────────────────────────
 async function loadLibrary() {
   const [scan, progressMap, durationMap] = await Promise.all([
-    fetchServerScan(),
+    scanHandle(state.dirHandle),
     db.getProgressMap(),
     db.getDurations()
   ]);
-  state.rootName = scan.rootName;
+  state.rootName = state.dirHandle.name;
   const prevId = state.selectedVideo?.id;
   state.library = buildLibrary(scan.raw, state.rootName, progressMap, durationMap, scan.subs);
   el.sourceRoot.textContent = state.rootName;
@@ -2066,7 +2168,7 @@ function recomputeAggregates() {
 // in lengths progressively. Persisted to IndexedDB so it's a one-time cost.
 async function probeDurations() {
   const pending = (state.library?.videos || []).filter(
-    (v) => v.kind !== 'pdf' && !Number.isFinite(v.durationSeconds) && (v._url || v._handle)
+    (v) => v.kind !== 'pdf' && !Number.isFinite(v.durationSeconds) && v._handle
   );
   if (!pending.length) return;
   const token = (state.probeToken = (state.probeToken || 0) + 1);
@@ -2126,20 +2228,16 @@ function probeOne(video) {
       },
       { once: true }
     );
-    if (video._url) {
-      probe.src = video._url;
-    } else {
-      video._handle
-        .getFile()
-        .then((file) => {
-          url = URL.createObjectURL(file);
-          probe.src = url;
-        })
-        .catch((err) => {
-          clearTimeout(timer);
-          reject(err);
-        });
-    }
+    video._handle
+      .getFile()
+      .then((file) => {
+        url = URL.createObjectURL(file);
+        probe.src = url;
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
   });
 }
 
@@ -2273,7 +2371,7 @@ function selectVideo(video, options = {}) {
   el.videoFrame.classList.toggle('pdf-mode', isPdf);
   el.videoFrame.classList.remove('is-playing');
 
-  // Release the previous local file URL before loading the next (server URLs aren't blobs).
+  // Release the previous local file's blob URL before loading the next.
   if (state.currentObjectURL) {
     if (state.currentObjectURL.startsWith('blob:')) URL.revokeObjectURL(state.currentObjectURL);
     state.currentObjectURL = null;
@@ -2507,8 +2605,9 @@ function loadTranscript(video) {
   }
 
   const token = (state.transcriptToken = state.transcriptToken + 1);
-  fetch(video._subUrl)
-    .then((r) => r.text())
+  video._subHandle
+    .getFile()
+    .then((f) => f.text())
     .then((text) => {
       if (token !== state.transcriptToken || state.selectedVideo?.id !== video.id) return;
       state.transcript = parseSubtitles(text);
