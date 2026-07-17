@@ -1,0 +1,14 @@
+# Overlay for a host that already runs its own nginx + certbot in front of
+# other apps (each app gets its own domain, proxied by the host nginx to a
+# unique localhost port). Skips this repo's own `web` (nginx/TLS) service —
+# the host nginx reverse-proxies straight to `app` instead.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.shared-host.yml up -d --build app db
+#
+# Then add a host nginx site for the app's domain, proxying to
+# 127.0.0.1:8081, and run `certbot --nginx -d <domain>` — same pattern as
+# this host's other apps.
+services:
+  app:
+    ports:
+      - '127.0.0.1:8081:4173'
